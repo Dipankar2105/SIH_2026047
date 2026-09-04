@@ -1,17 +1,44 @@
-# Environment
+# Environment variables & secrets
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
+*.env
 
-# Python
-.venv/
-__pycache__/
-*.pyc
-
-# Local database
+# Database files
 *.db
+*.sqlite
+*.sqlite3
 
-# Node
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js & Next.js Build Outputs
 node_modules/
 .next/
+out/
+build/
 dist/
+
+# Testing & Coverage Logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Editor & OS Temp Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
