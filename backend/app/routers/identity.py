@@ -1,0 +1,209 @@
+import uuid
+from typing import Optional, List
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.auth import get_current_user
+from app.core.rbac import require_roles, verify_patient_access
+from app.core.security import create_access_token
+from app.services.abdm.abha_service import request_aadhaar_otp, enroll_abha
+from app.services.identity.patient_service import (
+    register_patient,
+    get_patient,
+    update_patient,
+    update_preferred_language,
+    get_language_pack,
+    get_supported_languages,
+)
+from app.services.identity.consent_service import (
+    grant_consent,
+    revoke_consent,
+    check_consent_status,
+)
+from app.services.identity.kiosk_service import (
+    create_kiosk_session,
+    validate_kiosk_session,
+    end_kiosk_session,
+)
+from app.schemas.patient import (
+    PatientCreate,
+    PatientUpdate,
+    PatientResponse,
+    LanguageSelection,
+    LanguagePackResponse,
+)
+from app.schemas.consent import (
+    ConsentCreate,
+    ConsentResponse,
+    ConsentStatusResponse,
+)
+from app.schemas.session import (
+    KioskSessionCreate,
+    KioskSessionResponse,
+    KioskSessionEndResponse,
+)
+
+router = APIRouter(prefix="/identity", tags=["Identity"])
+
+
+class AadhaarOTPRequest(BaseModel):
+    aadhaar: str
+
+
+class ABHAVerifyRequest(BaseModel):
+    txn_id: str
+    otp: str
+    mobile: str = ""
+    patient_id: Optional[uuid.UUID] = None
+
+
+from app.core.config import settings
+
+class TokenRequest(BaseModel):
+    user_id: str
+    role: str = "patient"
+
+
+@router.post("/auth/token", response_model=dict)
+def generate_user_token(data: TokenRequest):
+    if settings.ENVIRONMENT.lower() != "development":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Token generation endpoint is only available in development environment."
+        )
+    token = create_access_token({"sub": data.user_id, "role": data.role})
+    return {"access_token": token, "token_type": "bearer", "role": data.role}
+
+
+# ABDM ABHA Endpoints
+@router.post("/abha/request-otp")
+def request_abha_otp(data: AadhaarOTPRequest):
+    return request_aadhaar_otp(data.aadhaar)
+
+
+@router.post("/abha/verify-otp")
+def verify_abha_otp(data: ABHAVerifyRequest, db: Session = Depends(get_db)):
+    result = enroll_abha(
+        txn_id=data.txn_id,
+        otp=data.otp,
+        mobile=data.mobile,
+    )
+    
+    # If a patient ID was provided and enrollment succeeded, link the ABHA data
+    if data.patient_id and result.get("ABHANumber"):
+        update_data = PatientUpdate(
+            abha_id=result.get("ABHANumber"),
+            abha_address=result.get("abha_address")
+        )
+        update_patient(db, data.patient_id, update_data)
+
+    return result
+
+
+# Patient CRUD & Language Endpoints
+@router.post("/patient/register", response_model=PatientResponse)
+def register_patient_endpoint(patient_in: PatientCreate, db: Session = Depends(get_db)):
+    return register_patient(db, patient_in)
+
+
+@router.get("/patient/{patient_id}", response_model=PatientResponse)
+def get_patient_profile(
+    patient_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, patient_id)
+    return get_patient(db, patient_id)
+
+
+@router.put("/patient/{patient_id}", response_model=PatientResponse)
+def update_patient_profile(
+    patient_id: uuid.UUID,
+    patient_in: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, patient_id)
+    return update_patient(db, patient_id, patient_in)
+
+
+@router.post("/patient/{patient_id}/language", response_model=PatientResponse)
+def set_preferred_language(
+    patient_id: uuid.UUID,
+    selection: LanguageSelection,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, patient_id)
+    return update_preferred_language(db, patient_id, selection.preferred_language)
+
+
+@router.get("/languages", response_model=List[dict])
+def list_supported_languages():
+    return get_supported_languages()
+
+
+@router.get("/languages/{language_code}", response_model=LanguagePackResponse)
+def get_language_pack_endpoint(language_code: str):
+    pack = get_language_pack(language_code)
+    return LanguagePackResponse(language_code=language_code, translations=pack)
+
+
+# Consent Management Endpoints
+@router.post("/consent/grant", response_model=ConsentResponse)
+def grant_consent_endpoint(
+    consent_in: ConsentCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, consent_in.patient_id)
+    return grant_consent(db, consent_in)
+
+
+@router.post("/consent/revoke", response_model=ConsentResponse)
+def revoke_consent_endpoint(
+    patient_id: uuid.UUID,
+    consent_id: Optional[uuid.UUID] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, patient_id)
+    return revoke_consent(db, patient_id, consent_id)
+
+
+@router.get("/consent/status/{patient_id}", response_model=ConsentStatusResponse)
+def get_consent_status_endpoint(
+    patient_id: uuid.UUID,
+    consent_type: str = "health_record_sharing",
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    verify_patient_access(current_user, patient_id)
+    return check_consent_status(db, patient_id, consent_type)
+
+
+# Kiosk Session Privacy & Lifecycle
+@router.post("/kiosk/session/start", response_model=KioskSessionResponse)
+def start_kiosk_session(
+    session_in: KioskSessionCreate,
+    db: Session = Depends(get_db),
+):
+    return create_kiosk_session(db, session_in)
+
+
+@router.get("/kiosk/session/validate/{session_id}", response_model=KioskSessionResponse)
+def validate_kiosk_session_endpoint(
+    session_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    return validate_kiosk_session(db, session_id)
+
+
+@router.post("/kiosk/session/end/{session_id}", response_model=KioskSessionEndResponse)
+def end_kiosk_session_endpoint(
+    session_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    return end_kiosk_session(db, session_id)
