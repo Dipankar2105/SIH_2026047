@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -36,6 +36,7 @@ class Document(Base):
     mime_type: Mapped[str | None] = mapped_column(String(100))
 
     ocr_text: Mapped[str | None] = mapped_column(Text)
+    ocr_data: Mapped[dict | list | None] = mapped_column(JSONB, nullable=True)
 
     status: Mapped[str] = mapped_column(
         String(30),

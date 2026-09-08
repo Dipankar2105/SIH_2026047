@@ -12,6 +12,7 @@ class DocumentCreate(BaseModel):
     storage_path: str
     mime_type: Optional[str] = "application/pdf"
     ocr_text: Optional[str] = None
+    ocr_data: Optional[Dict[str, Any] | List[Any]] = None
 
 
 class DocumentResponse(BaseModel):
@@ -22,6 +23,7 @@ class DocumentResponse(BaseModel):
     storage_path: str
     mime_type: Optional[str] = None
     ocr_text: Optional[str] = None
+    ocr_data: Optional[Dict[str, Any] | List[Any]] = None
     status: str
     created_at: datetime
 

@@ -21,3 +21,4 @@ from app.models.reminder import Reminder
 from app.models.drug import Drug
 from app.models.visit_history import VisitHistory
 from app.models.audit_log import AuditLog
+from app.models.fhir_bundle import FHIRBundle

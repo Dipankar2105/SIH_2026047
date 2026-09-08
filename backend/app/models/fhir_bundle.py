@@ -1,15 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
 
-class Summary(Base):
-    __tablename__ = "summaries"
+class FHIRBundle(Base):
+    __tablename__ = "fhir_bundles"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -17,10 +17,10 @@ class Summary(Base):
         default=uuid.uuid4,
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("patients.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
@@ -28,31 +28,23 @@ class Summary(Base):
         UUID(as_uuid=True),
         ForeignKey("sessions.id", ondelete="SET NULL"),
         nullable=True,
-    )
-
-    doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("doctors.id", ondelete="SET NULL"),
-        nullable=True,
         index=True,
     )
 
-    status: Mapped[str] = mapped_column(
-        String(30),
-        default="draft",
-        server_default="draft",
+    bundle_json: Mapped[dict] = mapped_column(
+        JSONB,
         nullable=False,
     )
 
-    summary_type: Mapped[str] = mapped_column(
+    bundle_type: Mapped[str | None] = mapped_column(
         String(50),
-        default="clinical",
-        server_default="clinical",
-        nullable=False,
+        nullable=True,
     )
 
-    summary_text: Mapped[str] = mapped_column(
-        Text,
+    abdm_compliant: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
         nullable=False,
     )
 
@@ -63,9 +55,8 @@ class Summary(Base):
 
     patient = relationship(
         "Patient",
-        back_populates="summaries",
     )
 
-    doctor = relationship(
-        "Doctor",
+    session = relationship(
+        "Session",
     )

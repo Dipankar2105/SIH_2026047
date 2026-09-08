@@ -25,6 +25,7 @@ def upload_document(db: Session, doc_in: DocumentCreate) -> Document:
         storage_path=doc_in.storage_path,
         mime_type=doc_in.mime_type,
         ocr_text=doc_in.ocr_text,
+        ocr_data=doc_in.ocr_data,
         status="processed",
     )
     db.add(doc)

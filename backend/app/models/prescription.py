@@ -37,6 +37,13 @@ class Prescription(Base):
         nullable=True,
     )
 
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     status: Mapped[str] = mapped_column(
         String(30),
         default="active",
@@ -53,6 +60,10 @@ class Prescription(Base):
     patient = relationship(
         "Patient",
         back_populates="prescriptions",
+    )
+
+    session = relationship(
+        "Session",
     )
 
     items = relationship(
