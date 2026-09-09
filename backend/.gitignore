@@ -39,3 +39,8 @@ AarogyaFlow_backups/
 .DS_Store
 Thumbs.db
 .vscode/
+# Local migration compatibility copy - preserved locally, not committed
+migrations/
+# Temporary Alembic configuration backup
+alembic.ini.before_structure_migration_*
+alembic.ini.before_final_structure_*
