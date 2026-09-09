@@ -1,0 +1,5 @@
+PATIENT = "patient"
+DOCTOR = "doctor"
+PHARMACIST = "pharmacist"
+ADMIN = "admin"
+SYSTEM = "system"
