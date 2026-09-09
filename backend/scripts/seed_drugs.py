@@ -2,8 +2,8 @@
 Seed script: bulk-insert drug data from data/kaggle_drugs.csv into the Supabase drugs table.
 
 Usage:
-    .\.venv\Scripts\python.exe scripts/seed_drugs.py
-    .\.venv\Scripts\python.exe scripts/seed_drugs.py --force
+    .\\.venv\\Scripts\\python.exe scripts/seed_drugs.py
+    .\\.venv\\Scripts\\python.exe scripts/seed_drugs.py --force
 
 Architecture:
     Primary path uses SQLAlchemy Session from app.core.database with
