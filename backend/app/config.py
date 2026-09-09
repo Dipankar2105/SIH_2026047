@@ -1,5 +1,13 @@
-import os
+﻿from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+# Always resolve .env relative to the backend directory.
+# This makes configuration work whether commands are run from
+# the project root or from the backend directory.
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -11,28 +19,19 @@ class Settings(BaseSettings):
 
     api_prefix: str = "/api/v1"
 
-    # Voice / confidence settings
     low_confidence_threshold: float = 0.65
 
-    # Supabase
     supabase_url: str | None = None
     supabase_anon_key: str | None = None
     supabase_service_role_key: str | None = None
 
-    # Gemini
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.6-flash"
 
-    # Hugging Face cache settings (D: drive)
-    hf_home: str = r"D:\HuggingFace"
-    hf_hub_cache: str = r"D:\HuggingFace\hub"
-    transformers_cache: str = r"D:\HuggingFace\transformers"
-
-    # External Hosted OCR Microservice URL
-    ocr_service_url: str | None = "http://localhost:8001/api/ocr"
+    ocr_service_url: str | None = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -40,9 +39,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
-# Ensure Hugging Face cache environment variables point to D: drive
-os.environ.setdefault("HF_HOME", settings.hf_home)
-os.environ.setdefault("HF_HUB_CACHE", settings.hf_hub_cache)
-os.environ.setdefault("TRANSFORMERS_CACHE", settings.transformers_cache)
-
