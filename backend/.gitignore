@@ -1,0 +1,41 @@
+﻿# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Logs
+*.log
+
+# Local model/cache files
+.huggingface/
+huggingface/
+models/
+model_cache/
+
+# Test audio / local recordings
+*.wav
+*.mp3
+*.flac
+
+# Local test outputs
+test_results/
+
+# Development backups
+backup_before_*/
+AarogyaFlow_backups/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
