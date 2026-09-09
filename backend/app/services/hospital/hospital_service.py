@@ -181,12 +181,12 @@ def get_hospital_dashboard(db: Session, hospital_id: uuid.UUID) -> HospitalDashb
 
     total_doctors = db.query(Doctor).filter(Doctor.hospital_id == hospital_id).count()
 
-    # Calculate avg wait time for completed appointments today
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Calculate avg wait time for completed appointments in the daily operational window (last 24 hours)
+    daily_start = now - timedelta(hours=24)
     completed_today_appts = db.query(Appointment).filter(
         Appointment.hospital_id == hospital_id,
         Appointment.status == "completed",
-        Appointment.appointment_time >= today_start
+        Appointment.appointment_time >= daily_start
     ).all()
 
     avg_wait_time = None

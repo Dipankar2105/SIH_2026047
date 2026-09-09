@@ -8,7 +8,12 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.rbac import require_roles, verify_patient_access
 from app.core.security import create_access_token
-from app.services.abdm.abha_service import request_aadhaar_otp, enroll_abha
+from app.services.abdm.abha_service import (
+    request_aadhaar_otp,
+    enroll_abha,
+    request_mobile_otp,
+    verify_mobile_otp,
+)
 from app.services.identity.patient_service import (
     register_patient,
     get_patient,
@@ -16,6 +21,7 @@ from app.services.identity.patient_service import (
     update_preferred_language,
     get_language_pack,
     get_supported_languages,
+    translate_text,
 )
 from app.services.identity.consent_service import (
     grant_consent,
@@ -33,6 +39,11 @@ from app.schemas.patient import (
     PatientResponse,
     LanguageSelection,
     LanguagePackResponse,
+    MobileOtpRequest,
+    MobileOtpVerify,
+    MobileOtpResponse,
+    TranslateRequest,
+    TranslateResponse,
 )
 from app.schemas.consent import (
     ConsentCreate,
@@ -102,6 +113,32 @@ def verify_abha_otp(data: ABHAVerifyRequest, db: Session = Depends(get_db)):
     return result
 
 
+@router.post("/mobile/request-otp", response_model=MobileOtpResponse)
+def request_mobile_otp_endpoint(data: MobileOtpRequest):
+    """
+    Sends a real OTP to any 10-digit Indian mobile number using the ABDM SMS Gateway.
+    """
+    result = request_mobile_otp(data.mobile)
+    return MobileOtpResponse(
+        txnId=result.get("txnId", ""),
+        message=result.get("message", "OTP sent successfully"),
+    )
+
+
+@router.post("/mobile/verify-otp")
+def verify_mobile_otp_endpoint(data: MobileOtpVerify, db: Session = Depends(get_db)):
+    """
+    Verifies the mobile OTP with ABDM.
+    If patient_id is supplied, links and confirms the patient.
+    """
+    result = verify_mobile_otp(txn_id=data.txn_id, otp=data.otp)
+    if data.patient_id:
+        patient = get_patient(db, data.patient_id)
+        result["patient"] = PatientResponse.model_validate(patient)
+    return result
+
+
+
 # Patient CRUD & Language Endpoints
 @router.post("/patient/register", response_model=PatientResponse)
 def register_patient_endpoint(patient_in: PatientCreate, db: Session = Depends(get_db)):
@@ -149,6 +186,26 @@ def list_supported_languages():
 def get_language_pack_endpoint(language_code: str):
     pack = get_language_pack(language_code)
     return LanguagePackResponse(language_code=language_code, translations=pack)
+
+
+@router.post("/translate", response_model=TranslateResponse)
+def translate_text_endpoint(req: TranslateRequest):
+    """
+    Translates medical terms, clinical phrases, triage statuses, or UI text
+    on-the-fly into any of the 7 supported languages.
+    """
+    translated = translate_text(
+        text=req.text,
+        target_language=req.target_language,
+        source_language=req.source_language or "en",
+    )
+    return TranslateResponse(
+        original_text=req.text,
+        translated_text=translated,
+        source_language=req.source_language or "en",
+        target_language=req.target_language,
+    )
+
 
 
 # Consent Management Endpoints

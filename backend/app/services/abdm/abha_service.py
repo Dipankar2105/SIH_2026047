@@ -266,3 +266,145 @@ def _parse_enrollment_response(raw: dict) -> dict:
             "pinCode": profile.get("pinCode", ""),
         },
     }
+
+
+def request_mobile_otp(mobile: str) -> dict:
+    """
+    Requests a real OTP via ABDM SMS Gateway to any Indian mobile phone number.
+    Endpoint: POST {settings.ABDM_ABHA_BASE_URL}/v3/profile/login/request/otp
+    """
+    if settings.ABDM_MOCK_MODE:
+        return {
+            "txnId": f"mock-txn-{uuid.uuid4().hex[:8]}",
+            "message": f"OTP sent to mobile number ending with ******{mobile[-4:]}"
+        }
+
+    try:
+        session = generate_session_token()
+        access_token = session.get("accessToken")
+        if not access_token:
+            raise HTTPException(status_code=502, detail="Failed to obtain ABDM access token")
+
+        key_response = get_public_key(access_token)
+        public_key = key_response.get("publicKey")
+        if not public_key:
+            raise HTTPException(status_code=502, detail="Failed to obtain ABDM public certificate key")
+
+        encrypted_mobile = encrypt_data(mobile, public_key)
+
+        url = f"{settings.ABDM_ABHA_BASE_URL}/v3/profile/login/request/otp"
+        timestamp = (
+            datetime.now(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+            + "Z"
+        )
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "REQUEST-ID": str(uuid.uuid4()),
+            "TIMESTAMP": timestamp,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "scope": ["abha-login", "mobile-verify"],
+            "loginHint": "mobile",
+            "loginId": encrypted_mobile,
+            "otpSystem": "abdm",
+        }
+        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        response.raise_for_status()
+        return response.json()
+    except HTTPException:
+        raise
+    except requests.exceptions.RequestException as e:
+        status_code = e.response.status_code if hasattr(e, "response") and e.response is not None else 502
+        resp_body = None
+        if hasattr(e, "response") and e.response is not None:
+            try:
+                resp_body = e.response.json()
+            except Exception:
+                resp_body = e.response.text
+        logger.error("ABDM Mobile OTP request failed: status=%s, response=%s", status_code, resp_body)
+        error_detail = "ABDM Mobile OTP request failed"
+        if isinstance(resp_body, dict) and "message" in resp_body:
+            error_detail = f"ABDM Mobile OTP Error: {resp_body['message']}"
+        raise HTTPException(status_code=status_code, detail=error_detail)
+    except Exception as e:
+        logger.error("Unexpected error in request_mobile_otp: %s", str(e))
+        raise HTTPException(status_code=502, detail="ABDM mobile service unavailable")
+
+
+def verify_mobile_otp(txn_id: str, otp: str) -> dict:
+    """
+    Verifies the OTP sent via ABDM SMS Gateway.
+    Endpoint: POST {settings.ABDM_ABHA_BASE_URL}/v3/profile/login/verify
+    """
+    if settings.ABDM_MOCK_MODE:
+        return {
+            "message": "Mobile OTP verified successfully",
+            "txnId": txn_id,
+            "verified": True,
+            "mobile": "9876543210"
+        }
+
+    try:
+        session = generate_session_token()
+        access_token = session.get("accessToken")
+        if not access_token:
+            raise HTTPException(status_code=502, detail="Failed to obtain ABDM access token")
+
+        key_response = get_public_key(access_token)
+        public_key = key_response.get("publicKey")
+        if not public_key:
+            raise HTTPException(status_code=502, detail="Failed to obtain ABDM public certificate key")
+
+        encrypted_otp = encrypt_data(otp, public_key)
+
+        url = f"{settings.ABDM_ABHA_BASE_URL}/v3/profile/login/verify"
+        timestamp = (
+            datetime.now(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+            + "Z"
+        )
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "REQUEST-ID": str(uuid.uuid4()),
+            "TIMESTAMP": timestamp,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "scope": ["abha-login", "mobile-verify"],
+            "authData": {
+                "authMethods": ["otp"],
+                "otp": {
+                    "txnId": txn_id,
+                    "otpValue": encrypted_otp,
+                },
+            },
+        }
+        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        response.raise_for_status()
+        raw_res = response.json()
+        return {
+            "message": raw_res.get("message", "Mobile OTP verified successfully"),
+            "txnId": txn_id,
+            "verified": True,
+            "profile": raw_res.get("profile") or raw_res.get("accounts", []),
+        }
+    except HTTPException:
+        raise
+    except requests.exceptions.RequestException as e:
+        status_code = e.response.status_code if hasattr(e, "response") and e.response is not None else 502
+        resp_body = None
+        if hasattr(e, "response") and e.response is not None:
+            try:
+                resp_body = e.response.json()
+            except Exception:
+                resp_body = e.response.text
+        logger.error("ABDM Mobile OTP verify failed: status=%s, response=%s", status_code, resp_body)
+        error_detail = "ABDM Mobile OTP verification failed"
+        if isinstance(resp_body, dict) and "message" in resp_body:
+            error_detail = f"ABDM Verification Error: {resp_body['message']}"
+        raise HTTPException(status_code=status_code, detail=error_detail)
+    except Exception as e:
+        logger.error("Unexpected error in verify_mobile_otp: %s", str(e))
+        raise HTTPException(status_code=502, detail="ABDM verification service unavailable")
