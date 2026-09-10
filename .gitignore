@@ -38,7 +38,13 @@ htmlcov/
 # Editor & OS Temp Files
 .vscode/
 .idea/
+.kilo/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+
+# Datasets
+kaggle_drugs.csv
+*.csv
+
