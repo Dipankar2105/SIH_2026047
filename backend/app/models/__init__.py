@@ -16,3 +16,6 @@ from app.models.drug import Drug
 from app.models.reminder import Reminder
 from app.models.visit_history import VisitHistory
 from app.models.audit_log import AuditLog
+from app.models.emergency_profile import EmergencyProfile
+from app.models.women_timeline import WomenTimeline
+from app.models.trusted_circle import TrustedCircle

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import documents, fhir, prescription, summary
+from app.routers import documents, fhir, prescription, summary, emergency, women_health, trusted_circle
 
 app = FastAPI(title="AarogyaFlow Backend", version="1.0.0")
 
@@ -17,6 +17,9 @@ app.include_router(documents.router)
 app.include_router(summary.router)
 app.include_router(prescription.router)
 app.include_router(fhir.router)
+app.include_router(emergency.router)
+app.include_router(women_health.router)
+app.include_router(trusted_circle.router)
 
 # TODO: Track A will add: identity, hospital, discovery
 # TODO: Track B will add: intake, voice, safety

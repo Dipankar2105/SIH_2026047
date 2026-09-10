@@ -6,7 +6,6 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-sys.path = sys.path[:-1]
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 config = context.config
@@ -23,7 +22,15 @@ target_metadata = Base.metadata
 def get_url():
     from app.core.config import settings
 
-    return settings.DATABASE_URL
+    url = settings.DATABASE_URL
+    if url.startswith("postgresql+asyncpg://"):
+        url = url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    if "db.tqyvoqddppdzhkcqochw.supabase.co" in url:
+        url = url.replace("postgres:", "postgres.tqyvoqddppdzhkcqochw:", 1)
+        url = url.replace("db.tqyvoqddppdzhkcqochw.supabase.co:5432", "aws-0-ap-south-1.pooler.supabase.com:6543", 1)
+    return url
 
 
 def run_migrations_offline() -> None:

@@ -26,3 +26,6 @@ class Patient(Base):
     documents = relationship("Document", back_populates="patient")
     summaries = relationship("Summary", back_populates="patient")
     prescriptions = relationship("Prescription", back_populates="patient")
+    emergency_profile = relationship("EmergencyProfile", back_populates="patient", uselist=False)
+    women_health_timeline = relationship("WomenTimeline", back_populates="patient")
+    trusted_circle_permissions = relationship("TrustedCircle", back_populates="patient")
