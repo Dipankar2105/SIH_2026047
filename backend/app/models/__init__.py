@@ -7,6 +7,7 @@ from app.models.kiosk_session import KioskSession
 from app.models.appointment import Appointment
 from app.models.consent import Consent
 from app.models.document import Document
+from app.models.family_member import FamilyMember
 from app.models.intake_answer import IntakeAnswer
 from app.models.red_flag import RedFlag
 from app.models.summary import Summary, FHIRBundle

@@ -22,7 +22,7 @@ def test_upload_document():
     with patch("app.routers.documents.document_service") as mock_service:
         mock_service.upload_document.return_value = mock_doc
         response = client.post(
-            "/api/documents/upload",
+            "/documents/upload",
             data={"patient_id": "123e4567-e89b-12d3-a456-426614174001", "document_type": "lab_report"},
             files={"file": ("test.pdf", b"test content", "application/pdf")},
             headers={"X-User-Role": "doctor"},
@@ -33,5 +33,5 @@ def test_upload_document():
 def test_get_document_not_found():
     with patch("app.routers.documents.document_service") as mock_service:
         mock_service.get_document.return_value = None
-        response = client.get("/api/documents/123e4567-e89b-12d3-a456-426614174000", headers={"X-User-Role": "doctor"})
+        response = client.get("/documents/123e4567-e89b-12d3-a456-426614174000", headers={"X-User-Role": "doctor"})
         assert response.status_code == 404

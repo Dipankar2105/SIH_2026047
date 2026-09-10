@@ -1,18 +1,71 @@
-from uuid import uuid4
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base
 
 
 class VisitHistory(Base):
     __tablename__ = "visit_history"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    patient_id = Column(PG_UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
-    doctor_id = Column(PG_UUID(as_uuid=True), ForeignKey("doctors.id"), nullable=True)
-    hospital_id = Column(PG_UUID(as_uuid=True), ForeignKey("hospitals.id"), nullable=True)
-    visit_date = Column(DateTime(timezone=True), nullable=False)
-    diagnosis = Column(Text, nullable=True)
-    treatment = Column(Text, nullable=True)
-    notes = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    patient_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    doctor_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("doctors.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    hospital_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hospitals.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    visit_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    diagnosis: Mapped[str | None] = mapped_column(Text)
+
+    treatment: Mapped[str | None] = mapped_column(Text)
+
+    notes: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    patient = relationship(
+        "Patient",
+        back_populates="visit_histories",
+    )
+
+    doctor = relationship(
+        "Doctor",
+        back_populates="visit_histories",
+    )
+
+    hospital = relationship(
+        "Hospital",
+        back_populates="visit_histories",
+    )

@@ -1,21 +1,58 @@
-from uuid import uuid4
-from sqlalchemy import Column, String, Text, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base
 
 
 class Hospital(Base):
     __tablename__ = "hospitals"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name = Column(String(200), nullable=False)
-    address = Column(Text, nullable=True)
-    city = Column(String(100), nullable=True)
-    state = Column(String(100), nullable=True)
-    pincode = Column(String(10), nullable=True)
-    phone = Column(String(20), nullable=True)
-    email = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
 
-    doctors = relationship("Doctor", back_populates="hospital")
+    name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+    )
+
+    address: Mapped[str | None] = mapped_column(Text)
+
+    city: Mapped[str | None] = mapped_column(String(100), index=True)
+
+    state: Mapped[str | None] = mapped_column(String(100))
+
+    pincode: Mapped[str | None] = mapped_column(String(10))
+
+    phone: Mapped[str | None] = mapped_column(String(20))
+
+    email: Mapped[str | None] = mapped_column(String(255))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    doctors = relationship(
+        "Doctor",
+        back_populates="hospital",
+        cascade="all, delete-orphan",
+    )
+
+    appointments = relationship(
+        "Appointment",
+        back_populates="hospital",
+    )
+
+    visit_histories = relationship(
+        "VisitHistory",
+        back_populates="hospital",
+        cascade="all, delete-orphan",
+    )

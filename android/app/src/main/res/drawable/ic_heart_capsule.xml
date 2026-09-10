@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Left pill half (sky blue) -->
+    <path
+        android:pathData="M24,16 C20.5,12 14.5,12 11,16 C7.5,20 7.5,26 12,30.5 L24,41 L24,16 Z"
+        android:fillColor="#38BDF8"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"/>
+
+    <!-- Right pill half (warm gold / yellow) -->
+    <path
+        android:pathData="M24,16 C27.5,12 33.5,12 37,16 C40.5,20 40.5,26 36,30.5 L24,41 L24,16 Z"
+        android:fillColor="#FBBF24"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"/>
+
+    <!-- Inner white pill separator highlight -->
+    <path
+        android:pathData="M24,16 L24,41"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"/>
+
+    <path
+        android:pathData="M15,18 C16.5,16.5 19,16 21,17"
+        android:strokeColor="#99FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"/>
+</vector>

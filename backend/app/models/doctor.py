@@ -1,23 +1,85 @@
-from uuid import uuid4
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base
 
 
 class Doctor(Base):
     __tablename__ = "doctors"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    hospital_id = Column(PG_UUID(as_uuid=True), ForeignKey("hospitals.id"), nullable=False)
-    name = Column(String(150), nullable=False)
-    specialization = Column(String(150), nullable=True)
-    qualification = Column(String(255), nullable=True)
-    registration_number = Column(String(100), unique=True, nullable=True)
-    phone = Column(String(20), nullable=True)
-    email = Column(String(255), nullable=True)
-    bio = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
 
-    prescriptions = relationship("Prescription", back_populates="doctor")
-    hospital = relationship("Hospital", back_populates="doctors")
+    hospital_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hospitals.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+    )
+
+    specialization: Mapped[str | None] = mapped_column(
+        String(150),
+        index=True,
+    )
+
+    qualification: Mapped[str | None] = mapped_column(String(255))
+
+    registration_number: Mapped[str | None] = mapped_column(
+        String(100),
+        unique=True,
+    )
+
+    hpr_id: Mapped[str | None] = mapped_column(
+        String(50),
+        unique=True,
+        index=True,
+        doc="Healthcare Professional Registry ID from ABDM"
+    )
+
+    phone: Mapped[str | None] = mapped_column(String(20))
+
+    email: Mapped[str | None] = mapped_column(String(255))
+
+    bio: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    hospital = relationship(
+        "Hospital",
+        back_populates="doctors",
+    )
+
+    appointments = relationship(
+        "Appointment",
+        back_populates="doctor",
+    )
+
+    prescriptions = relationship(
+        "Prescription",
+        back_populates="doctor",
+    )
+
+    summaries = relationship(
+        "Summary",
+        back_populates="doctor",
+    )
+
+    visit_histories = relationship(
+        "VisitHistory",
+        back_populates="doctor",
+    )

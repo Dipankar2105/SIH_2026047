@@ -1,4 +1,6 @@
 import json
+import uuid
+from typing import Optional, List, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.models.drug import Drug
@@ -6,43 +8,78 @@ from app.core.audit import audit_service
 
 
 class PrescriptionService:
-    def search_drugs(self, db: Session, query: str, limit: int = 20) -> list:
-        q = f"%{query}%"
-        stmt = select(Drug).where(
-            (Drug.name.ilike(f"{query}%")) | (Drug.name.ilike(q)) | (Drug.generic_name.ilike(q))
-        ).where(Drug.is_active == True).limit(limit * 2)
-        drugs = db.execute(stmt).scalars().all()
-        seen = set()
-        out = []
-        for d in drugs:
-            score = 1.0 if d.name.lower().startswith(query.lower()) else 0.8
-            if d.id not in seen:
-                seen.add(d.id)
-                out.append({
-                    "id": d.id,
-                    "name": d.name,
-                    "generic_name": d.generic_name,
-                    "strength": d.strength,
-                    "dosage_form": d.dosage_form,
-                    "manufacturer": d.manufacturer,
-                    "match_score": score,
-                })
-        return out[:limit]
+    def search_drugs(self, db: Session, query: str = "", limit: int = 20, q: Optional[str] = None) -> List[Any]:
+        query_term = (q or query or "").strip().lower()
+        if not query_term:
+            return []
+        pattern = f"%{query_term}%"
+        stmt = (
+            select(Drug)
+            .where(
+                (Drug.name.ilike(f"{query_term}%")) | (Drug.name.ilike(pattern)) | (Drug.generic_name.ilike(pattern))
+            )
+            .where(Drug.is_active == True)
+            .order_by(Drug.name.asc())
+            .limit(limit)
+        )
+        return db.execute(stmt).scalars().all()
+
+    def get_drug_by_id(self, db: Session, drug_id: Any) -> Drug:
+        if isinstance(drug_id, str):
+            try:
+                drug_id = uuid.UUID(drug_id)
+            except Exception:
+                pass
+        drug = db.get(Drug, drug_id)
+        if not drug:
+            raise ValueError("Drug not found")
+        return drug
 
     def create_prescription(self, db: Session, payload, doctor_id: str = None) -> "Prescription":
         from app.models.prescription import Prescription
         from app.models.prescription_item import PrescriptionItem
+        p_id = getattr(payload, "patient_id", None)
+        if isinstance(p_id, str):
+            try:
+                p_id = uuid.UUID(p_id)
+            except Exception:
+                pass
+
+        doc_id = getattr(payload, "doctor_id", None) or doctor_id
+        if doc_id is not None:
+            if isinstance(doc_id, str):
+                try:
+                    doc_id = uuid.UUID(doc_id)
+                except Exception:
+                    doc_id = None
+
+        appt_id = getattr(payload, "appointment_id", None)
+        if isinstance(appt_id, str):
+            try:
+                appt_id = uuid.UUID(appt_id)
+            except Exception:
+                pass
+
+        sess_id = getattr(payload, "session_id", None)
+        if isinstance(sess_id, str):
+            try:
+                sess_id = uuid.UUID(sess_id)
+            except Exception:
+                pass
+
         rx = Prescription(
-            patient_id=payload.patient_id,
-            doctor_id=doctor_id or str(payload.doctor_id) if payload.doctor_id else doctor_id,
-            appointment_id=payload.appointment_id,
-            session_id=payload.session_id,
+            patient_id=p_id,
+            doctor_id=doc_id,
+            appointment_id=appt_id,
+            session_id=sess_id,
             status="draft",
-            notes=payload.notes,
+            notes=getattr(payload, "notes", None),
         )
         db.add(rx)
         db.flush()
-        for med in payload.medicines:
+
+        meds = getattr(payload, "medicines", None) or getattr(payload, "items", [])
+        for med in meds:
             item = PrescriptionItem(
                 prescription_id=rx.id,
                 drug_name=med.drug_name,
@@ -56,7 +93,7 @@ class PrescriptionService:
         db.commit()
         db.refresh(rx)
         audit_service.log(
-            db, actor_id=str(payload.doctor_id), actor_type="doctor",
+            db, actor_id=str(doc_id) if doc_id else "system", actor_type="doctor",
             action="CREATE", resource_type="prescription", resource_id=str(rx.id)
         )
         return rx
@@ -77,7 +114,36 @@ class PrescriptionService:
 
     def get_prescription(self, db: Session, prescription_id: str):
         from app.models.prescription import Prescription
+        if isinstance(prescription_id, str):
+            try:
+                prescription_id = uuid.UUID(prescription_id)
+            except Exception:
+                pass
         return db.get(Prescription, prescription_id)
+
+    def list_prescriptions(self, db: Session, patient_id: Optional[uuid.UUID] = None, limit: int = 50) -> List["Prescription"]:
+        from app.models.prescription import Prescription
+        stmt = select(Prescription).order_by(Prescription.prescribed_at.desc()).limit(limit)
+        if patient_id:
+            if isinstance(patient_id, str):
+                try:
+                    patient_id = uuid.UUID(patient_id)
+                except Exception:
+                    pass
+            stmt = stmt.where(Prescription.patient_id == patient_id)
+        return db.execute(stmt).scalars().all()
+
+    def get_patient_prescriptions(self, db: Session, patient_id: str):
+        from app.models.prescription import Prescription
+        if isinstance(patient_id, str):
+            try:
+                patient_id = uuid.UUID(patient_id)
+            except Exception:
+                pass
+        stmt = select(Prescription).where(
+            Prescription.patient_id == patient_id
+        ).order_by(Prescription.prescribed_at.desc())
+        return db.execute(stmt).scalars().all()
 
     def get_pharmacist_view(self, db: Session, prescription_id: str) -> dict:
         rx = self.get_prescription(db, prescription_id)
@@ -112,13 +178,6 @@ class PrescriptionService:
             "notes": rx.notes,
             "follow_up_info": "",
         }
-
-    def get_patient_prescriptions(self, db: Session, patient_id: str):
-        from app.models.prescription import Prescription
-        stmt = select(Prescription).where(
-            Prescription.patient_id == patient_id
-        ).order_by(Prescription.prescribed_at.desc())
-        return db.execute(stmt).scalars().all()
 
 
 prescription_service = PrescriptionService()
