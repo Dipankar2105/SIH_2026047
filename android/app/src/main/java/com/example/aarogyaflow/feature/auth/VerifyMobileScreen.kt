@@ -1,35 +1,63 @@
 package com.example.aarogyaflow.feature.auth
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.aarogyaflow.R
 
 @Composable
 fun VerifyMobileScreen(
+    mobileNumber: String = "+91 ••••••8901",
     onBackClick: () -> Unit,
     onVerifyClick: (String) -> Unit,
     onResendClick: () -> Unit
 ) {
     var otpValue by remember { mutableStateOf("") }
-    
+    var isFieldFocused by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    // Explicit brand colors from Stitch specification
     val bgGradient = Brush.verticalGradient(
         colors = listOf(
             Color(0xFFEBF2F7),
@@ -37,17 +65,39 @@ fun VerifyMobileScreen(
             Color(0xFFF1F5F9)
         )
     )
-    val darkGreen = Color(0xFF0A5645)
+    val iconBg = Color(0xFF0A5645)
     val textHeading = Color(0xFF192231)
     val textSubtitle = Color(0xFF556575)
+    val textPhone = Color(0xFF293845)
+    val borderUnfocused = Color(0xFFD9E2EC)
+    val borderFocused = Color(0xFF5E8F85)
     val btnColor = Color(0xFF618D83)
     val resendColor = Color(0xFF0B5C4D)
+    val helperTextColor = Color(0xFF6E7F91)
+    val digitColor = Color(0xFF1E293B)
+    val caretColor = Color(0xFF0A5645)
+
+    // Animated cursor blinking for the active OTP box
+    val infiniteTransition = rememberInfiniteTransition(label = "cursorBlink")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "cursorAlpha"
+    )
+
+    // Automatically request focus when entering the screen
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF2F4F7)),
-        contentAlignment = Alignment.Center
+            .background(Color(0xFFF1F5F9))
     ) {
         Column(
             modifier = Modifier
@@ -56,35 +106,61 @@ fun VerifyMobileScreen(
                 .statusBarsPadding()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-            // Header: Back Button
+            // Header: Back Navigation Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onBackClick, contentPadding = PaddingValues(0.dp)) {
-                    Text("< Back", color = Color(0xFF3D4C5E), fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                Row(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onBackClick() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_chevron_left),
+                        contentDescription = "Back",
+                        tint = Color(0xFF3D4C5E),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Back",
+                        color = Color(0xFF3D4C5E),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Badge Icon
+
+            // Badge Icon (Phone)
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(darkGreen, RoundedCornerShape(14.dp))
+                    .background(iconBg, RoundedCornerShape(14.dp))
                     .shadow(1.dp, RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("✉️", fontSize = 20.sp) // Message icon placeholder
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_mobile_device),
+                    contentDescription = "Mobile Verification",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             }
-            
+
             Spacer(modifier = Modifier.height(20.dp))
-            
+
+            // Screen Title
             Text(
                 text = "Verify your mobile number",
                 fontSize = 26.sp,
@@ -92,98 +168,168 @@ fun VerifyMobileScreen(
                 color = textHeading,
                 lineHeight = 32.sp
             )
-            
+
             Spacer(modifier = Modifier.height(6.dp))
-            
+
+            // Subtitle with masked phone number
+            val subtitleText = buildAnnotatedString {
+                append("We sent a 6-digit code to ")
+                withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = textPhone)) {
+                    append(if (mobileNumber.startsWith("+91")) mobileNumber else "+91 ••••••8901")
+                }
+            }
             Text(
-                text = "We sent a 6-digit code to +91 ••••••8901",
+                text = subtitleText,
                 fontSize = 14.sp,
                 color = textSubtitle
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // OTP Input
-            BasicTextField(
-                value = otpValue,
-                onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) otpValue = it },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                decorationBox = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+
+            // OTP Input Grid (DETERMINISTIC, NEVER SOLID BLACK)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
                     ) {
-                        repeat(6) { index ->
-                            val char = when {
-                                index >= otpValue.length -> ""
-                                else -> otpValue[index].toString()
-                            }
-                            val isFocused = otpValue.length == index
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f)
-                                    .background(Color.White, RoundedCornerShape(16.dp))
-                                    .border(
-                                        width = if (isFocused) 1.5.dp else 1.dp,
-                                        color = if (isFocused) btnColor else Color(0xFFD9E2EC).copy(alpha = 0.7f),
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .shadow(2.dp, RoundedCornerShape(16.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = char,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
+                        focusRequester.requestFocus()
+                    }
+            ) {
+                // Transparent, fully functional BasicTextField overlay
+                BasicTextField(
+                    value = TextFieldValue(
+                        text = otpValue,
+                        selection = TextRange(otpValue.length)
+                    ),
+                    onValueChange = { newValue ->
+                        val digits = newValue.text.filter { it.isDigit() }.take(6)
+                        otpValue = digits
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { isFieldFocused = it.isFocused },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    ),
+                    cursorBrush = SolidColor(Color.Transparent),
+                    textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
+                    decorationBox = {
+                        // Visual OTP cells rendered with explicit pure white background
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            repeat(6) { index ->
+                                val digit = otpValue.getOrNull(index)?.toString() ?: ""
+                                val isCurrentTarget = index == otpValue.length.coerceAtMost(5)
+                                val isFocusedCell = isFieldFocused && isCurrentTarget
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .shadow(1.dp, RoundedCornerShape(16.dp), clip = false)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color.White, RoundedCornerShape(16.dp))
+                                        .border(
+                                            width = if (isFocusedCell) 1.5.dp else 1.dp,
+                                            color = if (isFocusedCell) borderFocused else borderUnfocused.copy(alpha = 0.7f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (digit.isNotEmpty()) {
+                                        Text(
+                                            text = digit,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = digitColor,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    } else if (isFocusedCell) {
+                                        // Vertical caret in active cell
+                                        Box(
+                                            modifier = Modifier
+                                                .width(2.dp)
+                                                .height(20.dp)
+                                                .background(caretColor.copy(alpha = cursorAlpha), RoundedCornerShape(1.dp))
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            )
-            
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
+            // Helper text below OTP cells
             Text(
                 text = "Enter each digit or paste the full code",
                 fontSize = 13.sp,
-                color = Color(0xFF6E7F91)
+                color = helperTextColor
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
+            // Primary Action Button ("Verify")
             Button(
-                onClick = { onVerifyClick(otpValue) },
+                onClick = {
+                    focusManager.clearFocus()
+                    onVerifyClick(otpValue)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = darkGreen,
+                    containerColor = btnColor,
                     contentColor = Color.White
-                )
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
             ) {
-                Text("Verify", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(
+                    text = "Verify",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
+            // Resend OTP Action
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                TextButton(onClick = onResendClick) {
-                    Text("Resend OTP", color = resendColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                }
+                Text(
+                    text = "Resend OTP",
+                    color = resendColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onResendClick() }
+                )
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Bottom Indicator
+
+            Spacer(modifier = Modifier.weight(1f).heightIn(min = 32.dp))
+
+            // Bottom Home Indicator (Matches Stitch layout)
             Box(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -197,10 +343,14 @@ fun VerifyMobileScreen(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun VerifyMobileScreenPreview() {
     MaterialTheme {
-        VerifyMobileScreen({}, {}, {})
+        VerifyMobileScreen(
+            onBackClick = {},
+            onVerifyClick = {},
+            onResendClick = {}
+        )
     }
 }

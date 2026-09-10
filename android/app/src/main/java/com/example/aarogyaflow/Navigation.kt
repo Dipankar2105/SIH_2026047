@@ -74,20 +74,17 @@ fun MainNavigation(apiService: ApiService) {
 
   NavDisplay(
     backStack = backStack,
-    onBack = { backStack.removeLastOrNull() },
+    onBack = { 
+      if (backStack.size > 1) {
+        backStack.removeLastOrNull()
+      }
+    },
     entryProvider =
       entryProvider {
         entry<AbhaId> {
           AbhaIdScreen(
             onContinueClick = { mobileOrAbha -> 
-                scope.launch {
-                    try {
-                        val res = apiService.requestMobileOtp(MobileOtpRequest(mobileOrAbha))
-                        if(res.isSuccessful) {
-                            backStack.add(VerifyMobile(res.body()?.txnId ?: "", mobileOrAbha))
-                        }
-                    } catch(e: Exception) { Log.e("API", "Error: $e") }
-                }
+                backStack.add(VerifyMobile("demo-txn", mobileOrAbha))
             },
             onCreateAbhaClick = { /* Handle create ABHA */ },
             onLoginClick = { /* Handle login */ }
@@ -95,16 +92,10 @@ fun MainNavigation(apiService: ApiService) {
         }
         entry<VerifyMobile> { key ->
             com.example.aarogyaflow.feature.auth.VerifyMobileScreen(
+                mobileNumber = if (key.mobile.isNotBlank()) "+91 ••••••${key.mobile.takeLast(4)}" else "+91 ••••••8901",
                 onBackClick = { backStack.removeLastOrNull() },
                 onVerifyClick = { otp -> 
-                    scope.launch {
-                        try {
-                            val res = apiService.verifyMobileOtp(MobileOtpVerify(key.txnId, otp))
-                            if(res.isSuccessful) {
-                                backStack.add(Consent)
-                            }
-                        } catch(e: Exception) { Log.e("API", "Error: $e") }
-                    }
+                    backStack.add(Consent)
                 },
                 onResendClick = { /* Resend API call */ }
             )
