@@ -3,6 +3,8 @@ package com.example.aarogyaflow.feature.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,6 +53,9 @@ fun VerifyMobileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgGradient)
+                .statusBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp)
         ) {
             // Header: Back Button
@@ -155,9 +160,12 @@ fun VerifyMobileScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = btnColor)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = darkGreen,
+                    contentColor = Color.White
+                )
             ) {
-                Text("Verify", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Verify", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
             
             Spacer(modifier = Modifier.height(16.dp))

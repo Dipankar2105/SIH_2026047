@@ -49,6 +49,7 @@ fun UploadReportsScreen(
                 try {
                     apiService.uploadDocument(
                         DocumentUploadJsonRequest(
+                            patient_id = "f5bf0bdc-900f-4e26-9dcb-365bfdb99ba6",
                             document_type = selectedCategory.docType,
                             file_name = attachedFileName
                         )
@@ -392,7 +393,10 @@ fun UploadReportsScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00594C)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00594C),
+                    contentColor = Color.White
+                ),
                 enabled = !isUploading
             ) {
                 if (isUploading) {
@@ -405,7 +409,8 @@ fun UploadReportsScreen(
                     Text(
                         text = "Continue",
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
                     )
                 }
             }

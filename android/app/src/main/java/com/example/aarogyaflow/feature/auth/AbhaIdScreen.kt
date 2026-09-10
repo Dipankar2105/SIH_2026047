@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +52,9 @@ fun AbhaIdScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgLight)
+                .statusBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp)
         ) {
             // Header row
@@ -201,9 +206,12 @@ fun AbhaIdScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = tealLight)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = teal,
+                    contentColor = Color.White
+                )
             ) {
-                Text("Continue", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Continue", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
             
             Spacer(modifier = Modifier.weight(1f))

@@ -165,7 +165,15 @@ fun MainNavigation(apiService: ApiService) {
                 appointmentNumber = key.appointmentNumber,
                 estimatedWaitMinutes = key.waitMinutes,
                 onViewRecordsClick = { backStack.add(HealthRecords) },
-                onBackToHomeClick = { backStack.add(Home) }
+                onBackToHomeClick = { 
+                    while (backStack.size > 1) {
+                        backStack.removeLastOrNull()
+                    }
+                    if (backStack.isEmpty() || backStack.last() != Home) {
+                        backStack.clear()
+                        backStack.add(Home)
+                    }
+                }
             )
         }
         entry<HealthRecords> { PlaceholderScreen("My Health Records") { backStack.removeLastOrNull() } }

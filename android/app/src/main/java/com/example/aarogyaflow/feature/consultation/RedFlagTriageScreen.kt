@@ -265,7 +265,10 @@ fun RedFlagTriageScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB25344))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFB25344),
+                            contentColor = Color.White
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -280,7 +283,8 @@ fun RedFlagTriageScreen(
                             Text(
                                 text = "Alert hospital staff",
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
                             )
                         }
                     }

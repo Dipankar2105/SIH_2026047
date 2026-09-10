@@ -276,13 +276,21 @@ fun AllopathicWelcomeScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00594C))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00594C),
+                    contentColor = Color.White
+                )
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Start Chat", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Start Chat",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                     Icon(
                         painter = painterResource(id = R.drawable.ic_arrow_right),
                         contentDescription = null,
