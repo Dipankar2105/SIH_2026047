@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { QueuePatient } from "@/lib/services/dashboard.service";
+import { dashboardService, QueuePatient } from "@/lib/services/dashboard.service";
 
 function formatWaitTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -80,10 +80,15 @@ export function QueueTable({ patients, sortByWait }: QueueTableProps) {
     }
   };
 
-  const handleCall = (patient: QueuePatient) => {
+  const handleCall = async (patient: QueuePatient) => {
     if (patient.status === "completed") return;
     if (callingToken === patient.token) return;
     setCallingToken(patient.token);
+    try {
+      await dashboardService.updatePatientStatus(patient.id, "in-consultation");
+    } catch {
+      // Ignore network errors in UI call action to avoid breaking UI transition
+    }
     setTimeout(() => setCallingToken((current) => (current === patient.token ? null : current)), 2000);
   };
 

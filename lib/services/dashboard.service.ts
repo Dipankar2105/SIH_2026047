@@ -1,3 +1,5 @@
+import { apiClient } from "@/lib/api-client";
+
 export interface DashboardMetrics {
   totalToday: number;
   waiting: number;
@@ -84,6 +86,7 @@ export interface DashboardService {
   getDashboardData: () => Promise<DashboardData>;
   getPatientByToken: (token: string) => Promise<QueuePatient | null>;
   getQueuePatients: () => Promise<QueuePatient[]>;
+  updatePatientStatus: (id: string, status: QueuePatient["status"]) => Promise<boolean>;
   saveAssessment: (assessment: PatientAssessment) => Promise<boolean>;
   getAssessment: (token: string) => Promise<PatientAssessment | null>;
 }
@@ -334,58 +337,135 @@ for (let i = 10; i <= 24; i++) {
   });
 }
 
-export const dashboardService = {
-  getDashboardData(): Promise<DashboardData> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const waiting = TEMPORARY_PATIENTS.filter((p) => p.status === "waiting");
-        const inConsultation = TEMPORARY_PATIENTS.filter(
-          (p) => p.status === "in-consultation"
-        );
-        const completed = TEMPORARY_PATIENTS.filter(
-          (p) => p.status === "completed"
-        );
-        const priorityPatients = waiting.filter(
-          (p) => p.priority === "priority" || p.redFlagDetected
-        );
+// Toggle check: process.env.NEXT_PUBLIC_USE_MOCK_API === "false" uses Real API, otherwise Mock
+const IS_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API !== "false";
 
-        const nextPatient =
-          TEMPORARY_PATIENTS.find((p) => p.token === "#42") ??
-          waiting[0] ??
-          null;
-        const priorityAlert = priorityPatients[0] ?? null;
+export const dashboardService: DashboardService = {
+  async getQueuePatients(): Promise<QueuePatient[]> {
+    if (IS_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve([...TEMPORARY_PATIENTS]), 300);
+      });
+    }
 
-        resolve({
-          metrics: {
-            totalToday: TEMPORARY_PATIENTS.length,
-            waiting: waiting.length,
-            inConsultation: inConsultation.length,
-            completed: completed.length,
-            averageWaitMinutes: 22,
-          },
-          priorityAlert,
-          nextPatient,
-          recentPatients: [...inConsultation, ...completed].slice(0, 6),
-        });
-      }, 400);
-    });
+    try {
+      const data = await apiClient.get<QueuePatient[]>("/hospital/queue");
+      return Array.isArray(data) ? data : [...TEMPORARY_PATIENTS];
+    } catch (error) {
+      console.error("Failed to fetch real hospital queue:", error);
+      throw error;
+    }
   },
 
-  getPatientByToken(token: string): Promise<QueuePatient | null> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const normalized = token.startsWith("#") ? token : `#${token}`;
-        resolve(TEMPORARY_PATIENTS.find((p) => p.token === normalized) ?? null);
-      }, 200);
-    });
+  async getPatientByToken(token: string): Promise<QueuePatient | null> {
+    const normalized = token.startsWith("#") ? token : `#${token}`;
+
+    if (IS_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(TEMPORARY_PATIENTS.find((p) => p.token === normalized) ?? null);
+        }, 200);
+      });
+    }
+
+    try {
+      const cleanToken = normalized.replace(/^#/, "");
+      return await apiClient.get<QueuePatient>(`/hospital/queue/${cleanToken}`);
+    } catch (error) {
+      console.warn(`Failed to fetch patient ${normalized} from real API, checking local state:`, error);
+      return TEMPORARY_PATIENTS.find((p) => p.token === normalized) ?? null;
+    }
   },
 
-  getQueuePatients(): Promise<QueuePatient[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...TEMPORARY_PATIENTS]);
-      }, 300);
-    });
+  async updatePatientStatus(id: string, status: QueuePatient["status"]): Promise<boolean> {
+    if (IS_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const p = TEMPORARY_PATIENTS.find((item) => item.id === id || item.token === id);
+          if (p) {
+            p.status = status;
+          }
+          resolve(true);
+        }, 200);
+      });
+    }
+
+    try {
+      await apiClient.put(`/hospital/queue/update/${id}`, { status });
+      const p = TEMPORARY_PATIENTS.find((item) => item.id === id || item.token === id);
+      if (p) {
+        p.status = status;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Failed to update patient status for ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async getDashboardData(): Promise<DashboardData> {
+    if (IS_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const waiting = TEMPORARY_PATIENTS.filter((p) => p.status === "waiting");
+          const inConsultation = TEMPORARY_PATIENTS.filter(
+            (p) => p.status === "in-consultation"
+          );
+          const completed = TEMPORARY_PATIENTS.filter(
+            (p) => p.status === "completed"
+          );
+          const priorityPatients = waiting.filter(
+            (p) => p.priority === "priority" || p.redFlagDetected
+          );
+
+          const nextPatient =
+            TEMPORARY_PATIENTS.find((p) => p.token === "#42") ??
+            waiting[0] ??
+            null;
+          const priorityAlert = priorityPatients[0] ?? null;
+
+          resolve({
+            metrics: {
+              totalToday: TEMPORARY_PATIENTS.length,
+              waiting: waiting.length,
+              inConsultation: inConsultation.length,
+              completed: completed.length,
+              averageWaitMinutes: 22,
+            },
+            priorityAlert,
+            nextPatient,
+            recentPatients: [...inConsultation, ...completed].slice(0, 6),
+          });
+        }, 400);
+      });
+    }
+
+    try {
+      // Try backend dashboard endpoint first
+      return await apiClient.get<DashboardData>("/hospital/dashboard");
+    } catch (error) {
+      console.warn("Backend /hospital/dashboard unreachable, synthesizing metrics from queue:", error);
+      const patients = await this.getQueuePatients();
+      const waiting = patients.filter((p) => p.status === "waiting");
+      const inConsultation = patients.filter((p) => p.status === "in-consultation");
+      const completed = patients.filter((p) => p.status === "completed");
+      const priorityPatients = waiting.filter(
+        (p) => p.priority === "priority" || p.redFlagDetected
+      );
+
+      return {
+        metrics: {
+          totalToday: patients.length,
+          waiting: waiting.length,
+          inConsultation: inConsultation.length,
+          completed: completed.length,
+          averageWaitMinutes: 22,
+        },
+        priorityAlert: priorityPatients[0] ?? null,
+        nextPatient: waiting[0] ?? null,
+        recentPatients: [...inConsultation, ...completed].slice(0, 6),
+      };
+    }
   },
 
   saveAssessment(assessment: PatientAssessment): Promise<boolean> {
@@ -396,7 +476,6 @@ export const dashboardService = {
           if (typeof window !== "undefined") {
             window.sessionStorage.setItem(`assessment_${normalized}`, JSON.stringify(assessment));
           }
-          // Also update doctorNotes on matching TEMPORARY_PATIENTS entry if present
           const p = TEMPORARY_PATIENTS.find((item) => item.token === normalized);
           if (p) {
             p.doctorNotes = assessment.clinicalNotes;
