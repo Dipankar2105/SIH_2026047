@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Activity,
   Bell,
   CalendarDays,
   ClipboardList,
   Clock3,
+  CheckCircle2,
   Hospital,
   LayoutDashboard,
   LogOut,
@@ -61,6 +62,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [checking, setChecking] = useState(true);
   const [now, setNow] = useState(() => new Date());
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [headerToast, setHeaderToast] = useState("");
+  const headerToastTimer = useRef<number | null>(null);
   const activeId = pathname === "/admin/alerts" ? "alerts" : pathname === "/admin/queue" ? "queue" : "dashboard";
 
   useEffect(() => {
@@ -80,11 +85,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      if (headerToastTimer.current) {
+        window.clearTimeout(headerToastTimer.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     setMobileOpen(false);
+    setShowNotifications(false);
+    setShowProfileMenu(false);
   }, [pathname]);
 
   const time = now.toLocaleTimeString("en-IN", {
@@ -105,7 +117,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => {
     clearAdminSession();
     setSession(null);
+    setShowProfileMenu(false);
     router.replace("/admin/login");
+  };
+
+  const showHeaderToast = (message: string) => {
+    setHeaderToast(message);
+    if (headerToastTimer.current) {
+      window.clearTimeout(headerToastTimer.current);
+    }
+    headerToastTimer.current = window.setTimeout(() => setHeaderToast(""), 2600);
   };
 
   if (pathname === "/admin/login") {
@@ -126,10 +147,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <div className="flex h-full flex-col">
           <div className="flex h-[76px] items-center justify-between border-b border-[#EDF1F5] px-5">
-            <Link href="/admin" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#087E6A] text-sm font-extrabold text-white shadow-sm">
-                AF
-              </span>
+            <Link href="/admin" className="flex items-center">
+              <img src="/logo.svg" alt="AarogyaFlow" className="h-8 w-auto mr-2" />
               <span>
                 <span className="block text-[15px] font-extrabold tracking-tight text-[#172033]">AarogyaFlow</span>
                 <span className="block text-[10px] font-medium uppercase tracking-[0.12em] text-[#8490A2]">Hospital OS</span>
@@ -192,15 +211,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           <div className="border-t border-[#EDF1F5] p-3">
-            <div className="flex items-center gap-3 rounded-xl bg-[#F7F9FB] p-3">
-              <Avatar name={receptionistName} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-bold text-[#172033]">{receptionistName}</p>
-                <p className="truncate text-[10px] font-medium text-[#8490A2]">Receptionist</p>
-              </div>
-              <button type="button" onClick={handleLogout} className="rounded-lg p-1.5 text-[#8490A2] hover:bg-white" aria-label="Logout">
-                <LogOut className="h-4 w-4" />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileMenu((current) => !current);
+                  setShowNotifications(false);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl bg-[#F7F9FB] p-3 text-left hover:bg-[#EFF5F3]"
+                aria-label="Open account menu"
+                aria-expanded={showProfileMenu}
+              >
+                <Avatar name={receptionistName} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-bold text-[#172033]">{receptionistName}</p>
+                  <p className="truncate text-[10px] font-medium text-[#8490A2]">Receptionist</p>
+                </div>
               </button>
+              {showProfileMenu && (
+                <div className="absolute bottom-[calc(100%+8px)] left-0 z-50 w-44 rounded-xl border border-[#E5EAF0] bg-white p-2 shadow-lg">
+                  <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8490A2]">Account</p>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-[#C94C4C] hover:bg-[#FDECEC]"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -241,24 +281,106 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <p className="flex items-center gap-1 text-[10px] font-medium text-[#8490A2]"><CalendarDays className="h-3 w-3" />{date}</p>
                 </div>
               </div>
-              <button type="button" className="relative rounded-xl border border-[#E5EAF0] bg-white p-2.5 text-[#69758A] hover:bg-[#F7F9FB]" aria-label="Notifications">
-                <Bell className="h-[18px] w-[18px]" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#E5484D] ring-2 ring-white" />
-              </button>
-              <div className="flex items-center gap-2 border-l border-[#E5EAF0] pl-2 sm:pl-3">
-                <Avatar name={receptionistName} size="sm" />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNotifications((current) => !current);
+                    setShowProfileMenu(false);
+                  }}
+                  className="relative rounded-xl border border-[#E5EAF0] bg-white p-2.5 text-[#69758A] hover:bg-[#F7F9FB]"
+                  aria-label="Notifications"
+                  aria-expanded={showNotifications}
+                >
+                  <Bell className="h-[18px] w-[18px]" />
+                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#E5484D] ring-2 ring-white" />
+                </button>
+                {showNotifications && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 rounded-xl border border-[#E5EAF0] bg-white p-2 shadow-lg">
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <p className="text-[11px] font-extrabold text-[#172033]">Notifications</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowNotifications(false)}
+                        className="rounded-md px-1.5 py-1 text-[9px] font-semibold text-[#8490A2] hover:bg-[#F3F6F8]"
+                      >
+                        Mark read
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNotifications(false);
+                          showHeaderToast("Red-flag alert opened");
+                        }}
+                        className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left hover:bg-[#F7F9FB]"
+                      >
+                        <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#E5484D]" />
+                        <span>
+                          <span className="block text-[11px] font-semibold text-[#172033]">New red-flag alert generated</span>
+                          <span className="mt-0.5 block text-[10px] font-medium text-[#8490A2]">Priority review is ready</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNotifications(false);
+                          showHeaderToast("Consultation status updated");
+                        }}
+                        className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left hover:bg-[#F7F9FB]"
+                      >
+                        <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#12A87E]" />
+                        <span>
+                          <span className="block text-[11px] font-semibold text-[#172033]">Dr. Rajesh started consultation</span>
+                          <span className="mt-0.5 block text-[10px] font-medium text-[#8490A2]">OPD queue status changed</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative flex items-center gap-2 border-l border-[#E5EAF0] pl-2 sm:pl-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileMenu((current) => !current);
+                    setShowNotifications(false);
+                  }}
+                  className="rounded-lg hover:bg-[#F3F6F8]"
+                  aria-label="Open account menu"
+                  aria-expanded={showProfileMenu}
+                >
+                  <Avatar name={receptionistName} size="sm" />
+                </button>
                 <div className="hidden leading-tight md:block">
                   <p className="max-w-[140px] truncate text-[11px] font-bold text-[#172033]">{receptionistName}</p>
                   <p className="text-[10px] font-medium text-[#8490A2]">Receptionist</p>
                 </div>
-                <button type="button" onClick={handleLogout} className="ml-1 hidden items-center gap-1.5 rounded-lg border border-[#E5EAF0] bg-white px-2.5 py-1.5 text-[10px] font-bold text-[#69758A] hover:bg-[#F7F9FB] lg:inline-flex" aria-label="Logout">
-                  <LogOut className="h-3.5 w-3.5" />
-                  Logout
-                </button>
+                {showProfileMenu && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-40 rounded-xl border border-[#E5EAF0] bg-white p-2 shadow-lg">
+                    <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8490A2]">Account</p>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-[#C94C4C] hover:bg-[#FDECEC]"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </header>
+
+        {headerToast && (
+          <div className="fixed right-4 top-[92px] z-50 flex items-center gap-2 rounded-xl border border-[#BCE7D5] bg-white px-4 py-3 text-[11px] font-semibold text-[#087E6A] shadow-lg">
+            <CheckCircle2 className="h-4 w-4" />
+            {headerToast}
+          </div>
+        )}
 
         <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">{children}</main>
       </div>

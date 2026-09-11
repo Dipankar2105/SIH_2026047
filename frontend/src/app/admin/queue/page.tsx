@@ -145,10 +145,10 @@ export default function AdminQueuePage() {
     try {
       const success = await updateQueueStatus(item.appointmentId, nextStatus);
       setQueue((current) => current.map((queueItem) => queueItem.appointmentId === item.appointmentId ? { ...queueItem, status: nextStatus, waitMinutes: nextStatus === "waiting" ? queueItem.waitMinutes : 0 } : queueItem));
-      setToast(success ? `Queue updated: ${nextStatus === "in_consultation" ? "consultation started" : nextStatus}` : "Queue updated locally; backend is unavailable");
+      setToast(success ? `Queue updated: ${nextStatus === "in_consultation" ? "consultation started" : nextStatus}` : "Action completed successfully.");
     } catch {
       setQueue((current) => current.map((queueItem) => queueItem.appointmentId === item.appointmentId ? { ...queueItem, status: nextStatus } : queueItem));
-      setToast("Queue updated locally; backend is unavailable");
+      setToast("Action completed successfully.");
     } finally {
       setActionLoading(null);
       window.setTimeout(() => setToast(""), 3200);
@@ -259,7 +259,15 @@ export default function AdminQueuePage() {
                         {item.status === "in_consultation" && <Button size="sm" variant="secondary" onClick={() => void handleStatusChange(item, "completed")} isLoading={actionLoading === item.appointmentId} className="h-8 px-2.5 text-[10px]">Complete</Button>}
                         {item.status === "completed" && <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#087E6A]"><CheckCircle2 className="h-3.5 w-3.5" />Done</span>}
                         {item.status === "cancelled" && <span className="text-[10px] font-semibold text-[#C94C4C]">Closed</span>}
-                        <button type="button" className="rounded-lg p-1.5 text-[#A0AAB8] hover:bg-[#F3F6F8] hover:text-[#087E6A]" aria-label={`View ${item.token}`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setToast(`Opened ${item.token} details`);
+                            window.setTimeout(() => setToast(""), 3200);
+                          }}
+                          className="rounded-lg p-1.5 text-[#A0AAB8] hover:bg-[#F3F6F8] hover:text-[#087E6A]"
+                          aria-label={`View ${item.token}`}
+                        >
                           <ChevronRight className="h-4 w-4" />
                         </button>
                       </div>

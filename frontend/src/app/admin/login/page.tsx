@@ -167,6 +167,7 @@ export default function AdminLoginPage() {
                 <ShieldCheck className="h-4 w-4" />
                 Authorized access
               </div>
+              <img src="/logo.svg" alt="Logo" className="h-12 w-auto mb-4 mx-auto" />
               <h2 className="mt-3 text-[28px] font-extrabold tracking-tight text-[#172033] sm:text-[34px]">
                 AarogyaFlow Admin Console <span className="text-[#A0AAB8]">—</span> Receptionist Login
               </h2>

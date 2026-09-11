@@ -5,6 +5,7 @@ import {
   Activity,
   ArrowUpRight,
   CalendarClock,
+  CheckCircle2,
   MapPin,
   RefreshCw,
   Search,
@@ -110,6 +111,12 @@ export default function AdminDashboardPage() {
   const [department, setDepartment] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [actionToast, setActionToast] = useState("");
+
+  const showActionToast = (message: string) => {
+    setActionToast(message);
+    window.setTimeout(() => setActionToast(""), 2600);
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -167,6 +174,13 @@ export default function AdminDashboardPage() {
           </Button>
         </div>
       </div>
+
+      {actionToast && (
+        <div className="fixed right-4 top-[92px] z-50 flex items-center gap-2 rounded-xl border border-[#BCE7D5] bg-white px-4 py-3 text-[11px] font-semibold text-[#087E6A] shadow-lg">
+          <CheckCircle2 className="h-4 w-4" />
+          {actionToast}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard title="Doctors Available" value={counts.free} description="Ready to see patients now" icon={<UserRound className="h-5 w-5" />} tone="green" />
@@ -253,7 +267,12 @@ export default function AdminDashboardPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <button type="button" className="rounded-lg p-1.5 text-[#A0AAB8] opacity-0 transition-opacity hover:bg-[#F3F6F8] hover:text-[#087E6A] group-hover:opacity-100" aria-label={`View ${doctor.name}`}>
+                      <button
+                        type="button"
+                        onClick={() => showActionToast(`${doctor.name}'s profile is coming soon.`)}
+                        className="rounded-lg p-1.5 text-[#A0AAB8] opacity-0 transition-opacity hover:bg-[#F3F6F8] hover:text-[#087E6A] group-hover:opacity-100"
+                        aria-label={`View ${doctor.name}`}
+                      >
                         <ArrowUpRight className="h-4 w-4" />
                       </button>
                     </TableCell>
@@ -295,10 +314,18 @@ export default function AdminDashboardPage() {
             <CardTitle className="text-[14px]">Quick actions</CardTitle>
           </CardHeader>
           <CardContent className="!pt-2 space-y-2">
-            <button type="button" className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#BCE7D5] hover:bg-[#F7FCFA]">
+            <button
+              type="button"
+              onClick={() => showActionToast("Feature coming soon")}
+              className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#BCE7D5] hover:bg-[#F7FCFA]"
+            >
               <span className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8F7EF] text-[#087E6A]"><Users className="h-3.5 w-3.5" /></span>Open queue control</span><ArrowUpRight className="h-3.5 w-3.5" />
             </button>
-            <button type="button" className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#F5D9AE] hover:bg-[#FFFBF3]">
+            <button
+              type="button"
+              onClick={() => showActionToast("Feature coming soon")}
+              className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#F5D9AE] hover:bg-[#FFFBF3]"
+            >
               <span className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FFF4E5] text-[#B66A00]"><Activity className="h-3.5 w-3.5" /></span>Review priority alerts</span><ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </CardContent>

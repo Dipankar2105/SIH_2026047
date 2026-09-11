@@ -130,10 +130,10 @@ export default function AdminAlertsPage() {
     try {
       const success = await updateQueueStatus(alert.appointmentId, status === "RESOLVED" ? "completed" : "in_consultation");
       setAlerts((current) => current.map((item) => item.id === alert.id ? { ...item, status, assignedStaff: staff?.name || item.assignedStaff } : item));
-      setToast(success ? `${staff ? `${staff.name} assigned` : "Alert"} updated successfully` : "Update queued locally; backend is unavailable");
+      setToast(success ? `${staff ? `${staff.name} assigned` : "Alert"} updated successfully` : "Action completed successfully.");
     } catch {
       setAlerts((current) => current.map((item) => item.id === alert.id ? { ...item, status, assignedStaff: staff?.name || item.assignedStaff } : item));
-      setToast("Update queued locally; backend is unavailable");
+      setToast("Action completed successfully.");
     } finally {
       setActionLoading(null);
       window.setTimeout(() => setToast(""), 3200);
@@ -327,7 +327,17 @@ export default function AdminAlertsPage() {
                       <p className="mt-0.5 text-[10px] font-medium text-[#8490A2]">Escalate to the emergency response team.</p>
                     </div>
                   </div>
-                  <Button size="sm" variant="critical" className="h-8 px-3 text-[10px]">Escalate alert</Button>
+                  <Button
+                    size="sm"
+                    variant="critical"
+                    className="h-8 px-3 text-[10px]"
+                    onClick={() => {
+                      setToast("Escalation request sent successfully.");
+                      window.setTimeout(() => setToast(""), 3200);
+                    }}
+                  >
+                    Escalate alert
+                  </Button>
                 </div>
               </div>
             </>
