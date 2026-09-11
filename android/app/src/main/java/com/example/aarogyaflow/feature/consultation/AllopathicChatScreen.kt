@@ -28,8 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aarogyaflow.R
-import com.example.aarogyaflow.data.remote.ApiService
-import com.example.aarogyaflow.data.remote.models.IntakeMessageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -47,7 +45,6 @@ enum class MessageSender {
 
 @Composable
 fun AllopathicChatScreen(
-    apiService: ApiService,
     onBackClick: () -> Unit,
     onProceedToUpload: () -> Unit,
     onRedFlagDetected: (triggerMessage: String) -> Unit
@@ -100,92 +97,132 @@ fun AllopathicChatScreen(
 
         coroutineScope.launch {
             isBotTyping = true
-            try {
-                val res = apiService.processIntakeMessage(
-                    IntakeMessageRequest(
-                        message = trimmed,
-                        language = "en",
-                        step = currentStep
-                    )
-                )
+            delay(700) // Natural conversational pacing
+            isBotTyping = false
 
-                delay(500) // Natural conversational pacing
-                isBotTyping = false
+            val lowerText = trimmed.lowercase()
+            val reply: String
+            val nextChips: List<String>
+            val isRedFlag: Boolean
+            val complete: Boolean
 
-                if (res.isSuccessful && res.body() != null) {
-                    val body = res.body()!!
-                    if (body.is_urgent || body.triage_priority == "emergency") {
-                        onRedFlagDetected(trimmed)
-                        return@launch
-                    }
-
-                    // Bot Reply
-                    messages.add(
-                        ChatMessage(
-                            id = System.currentTimeMillis().toString(),
-                            sender = MessageSender.BOT,
-                            text = body.reply,
-                            showListen = true
-                        )
-                    )
-
-                    // Next question if available
-                    if (!body.next_question.isNullOrBlank()) {
-                        messages.add(
-                            ChatMessage(
-                                id = (System.currentTimeMillis() + 1).toString(),
-                                sender = MessageSender.BOT,
-                                text = body.next_question,
-                                showListen = true
-                            )
-                        )
-                    }
-
-                    currentStep = body.next_step
-
-                    // Update contextual chips based on response
-                    if (trimmed.equals("Stomach problem", ignoreCase = true)) {
-                        activeChips = listOf(
-                            "Upper abdomen",
-                            "Lower abdomen",
-                            "Around the navel",
-                            "Right side",
-                            "Left side",
-                            "Not sure"
-                        )
-                    } else if (trimmed.equals("Pain", ignoreCase = true)) {
-                        activeChips = listOf("Mild", "Moderate", "Severe", "Throbbing", "Sharp")
-                    } else {
-                        activeChips = emptyList()
-                    }
-
-                    if (body.next_step >= 5 || body.reply.contains("complete", ignoreCase = true)) {
-                        consultationCompleted = true
-                    }
-                } else {
-                    // Fallback conversational flow if offline or demo
-                    messages.add(
-                        ChatMessage(
-                            id = System.currentTimeMillis().toString(),
-                            sender = MessageSender.BOT,
-                            text = "Thank you. How long have you been experiencing these symptoms?",
-                            showListen = true
-                        )
-                    )
-                    activeChips = listOf("Less than a day", "1-3 days", "About a week", "More than a week")
-                    currentStep++
+            when {
+                // Red flag keywords — trigger triage flow
+                lowerText.contains("chest pain") ||
+                lowerText.contains("difficulty breathing") ||
+                lowerText.contains("shortness of breath") ||
+                lowerText.contains("can't breathe") ||
+                lowerText.contains("blurred vision") ||
+                lowerText.contains("seizure") ||
+                lowerText.contains("unconscious") ||
+                lowerText.contains("heavy bleeding") -> {
+                    reply = "I'm concerned about what you've described. These symptoms need immediate medical attention."
+                    nextChips = emptyList()
+                    isRedFlag = true
+                    complete = false
                 }
-            } catch (e: Exception) {
-                isBotTyping = false
-                messages.add(
-                    ChatMessage(
-                        id = System.currentTimeMillis().toString(),
-                        sender = MessageSender.BOT,
-                        text = "I've noted that. Where exactly do you feel the discomfort?",
-                        showListen = true
-                    )
+                lowerText.contains("stomach") -> {
+                    reply = "I understand. To help me narrow it down, is the discomfort in your upper abdomen, lower abdomen, or around your navel?"
+                    nextChips = listOf("Upper abdomen", "Lower abdomen", "Around the navel", "Right side", "Left side", "Not sure")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("fever") -> {
+                    reply = "Thank you for sharing. How high is your fever, and how long has it been going on?"
+                    nextChips = listOf("Mild", "Moderate", "High", "Very high")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("cough") -> {
+                    reply = "Got it. Is your cough dry, or are you producing phlegm? And how long have you had it?"
+                    nextChips = listOf("Dry cough", "Phlegm", "A week or less", "More than a week")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("pain") -> {
+                    reply = "Thanks for letting me know. How would you describe the pain — mild, moderate, or severe?"
+                    nextChips = listOf("Mild", "Moderate", "Severe", "Throbbing", "Sharp")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("headache") -> {
+                    reply = "Understood. Where in your head do you feel the pain, and is it constant or coming in waves?"
+                    nextChips = listOf("Front", "Back", "One side", "All over", "Constant", "Throbbing")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("how long") || lowerText.contains("less than a day") ||
+                lowerText.contains("1-3 days") || lowerText.contains("about a week") ||
+                lowerText.contains("more than a week") -> {
+                    reply = "Thank you for that detail. Have you taken any medication for these symptoms so far?"
+                    nextChips = listOf("Yes, prescribed", "Yes, OTC", "No, not yet")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("upper abdomen") || lowerText.contains("lower abdomen") ||
+                lowerText.contains("around the navel") || lowerText.contains("right side") ||
+                lowerText.contains("left side") -> {
+                    reply = "Thank you for pinpointing that. Have you noticed any nausea, loss of appetite, or changes in your digestion?"
+                    nextChips = listOf("Yes, nausea", "Yes, appetite loss", "Yes, digestion issues", "No, just pain")
+                    isRedFlag = false
+                    complete = false
+                }
+                lowerText.contains("mild") || lowerText.contains("moderate") ||
+                lowerText.contains("severe") || lowerText.contains("throbbing") ||
+                lowerText.contains("sharp") -> {
+                    reply = "Thank you for describing that. Based on what you've told me, I recommend resting, staying hydrated, and monitoring how you feel. Would you like to upload any past reports to share with a doctor?"
+                    nextChips = listOf("Yes, upload reports", "No, continue chat")
+                    isRedFlag = false
+                    complete = true
+                }
+                lowerText.contains("nausea") || lowerText.contains("appetite") ||
+                lowerText.contains("digestion") -> {
+                    reply = "I've noted those symptoms. To complete the assessment, would you like to upload any past medical reports or prescriptions for a more thorough review?"
+                    nextChips = listOf("Yes, upload reports", "No, skip for now")
+                    isRedFlag = false
+                    complete = true
+                }
+                lowerText.contains("medication") || lowerText.contains("prescribed") ||
+                lowerText.contains("otc") || lowerText.contains("not yet") -> {
+                    reply = "Thank you for that information. I have enough details now to summarize your symptoms. Would you like to upload any past reports for a more complete review?"
+                    nextChips = listOf("Yes, upload reports", "No, skip for now")
+                    isRedFlag = false
+                    complete = true
+                }
+                lowerText.contains("upload") -> {
+                    reply = "Great! You can share your past medical reports or prescriptions now, or we can wrap up the chat first."
+                    nextChips = listOf("Upload now", "Skip for now")
+                    isRedFlag = false
+                    complete = false
+                }
+                else -> {
+                    reply = "Thank you for sharing that. Is there anything else you'd like to tell me about how you're feeling?"
+                    nextChips = listOf("That's all", "More details")
+                    isRedFlag = false
+                    complete = false
+                }
+            }
+
+            // Add bot reply message
+            messages.add(
+                ChatMessage(
+                    id = System.currentTimeMillis().toString(),
+                    sender = MessageSender.BOT,
+                    text = reply,
+                    showListen = true
                 )
-                activeChips = listOf("Upper abdomen", "Lower abdomen", "Around the navel", "Not sure")
+            )
+
+            activeChips = nextChips
+            currentStep++
+
+            if (isRedFlag) {
+                onRedFlagDetected(trimmed)
+                return@launch
+            }
+
+            if (complete) {
+                consultationCompleted = true
             }
 
             // Auto-scroll to latest

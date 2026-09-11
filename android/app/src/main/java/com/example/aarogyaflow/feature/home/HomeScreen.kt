@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,18 +12,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
+import com.example.aarogyaflow.R
 
 @Composable
 fun HomeScreen(
@@ -33,137 +35,295 @@ fun HomeScreen(
     onAppointmentsClick: () -> Unit,
     onFamilyMembersClick: () -> Unit
 ) {
+    // Exact Stitch color tokens for Home (home_aarogyaflow)
+    val bgLight = Color(0xFFF5F8F9)
+    val brandTealDark = Color(0xFF015C49)
+    val iconBadgeBg = Color(0xFFEAF5F2)
+    val brandTealAccent = Color(0xFF0A735E)
+    val textHeading = Color(0xFF111827)
+    val textSubtitle = Color(0xFF4B5563)
+    val textMuted = Color(0xFF6B7280)
+    val borderLight = Color(0xFFE5E7EB)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F5F9))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
+            .background(bgLight)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F8F9), RoundedCornerShape(44.dp))
-                .shadow(16.dp, RoundedCornerShape(44.dp))
+                .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
-            // Header
+            // Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 16.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Brand Logo & Name
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(36.dp).background(Color.LightGray, RoundedCornerShape(12.dp))) {
-                        // Placeholder for logo
-                        Text("AF", modifier = Modifier.align(Alignment.Center), fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text("AarogyaFlow", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_aarogyaflow_logo),
+                        contentDescription = "AarogyaFlow logo",
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Text(
+                        text = "AarogyaFlow",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textHeading,
+                        letterSpacing = (-0.3).sp
+                    )
                 }
-                // Right Controls
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Language
+
+                // Right Controls: Language Selector, Audio, Notifications Bell
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Language button
+                    Row(
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color(0xFFD1D5DB), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_globe),
+                            contentDescription = "Language",
+                            tint = Color(0xFF6B7280),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "EN",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF374151)
+                        )
+                    }
+
+                    // Audio Text-to-speech button
                     Box(
                         modifier = Modifier
-                            .background(Color(0xCCFFFFFF), RoundedCornerShape(16.dp))
-                            .border(1.dp, Color(0xFFD1D5DB), RoundedCornerShape(16.dp))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { /* Audio TTS handler */ },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("EN", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_volume_speaker),
+                            contentDescription = "Listen",
+                            tint = Color(0xFF4B5563),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                    // Audio button placeholder
-                    Text("🔊", fontSize = 18.sp, modifier = Modifier.clickable { })
-                    // Notification bell placeholder
-                    Text("🔔", fontSize = 20.sp, modifier = Modifier.clickable { onNotificationsClick() })
+
+                    // Notification bell button
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onNotificationsClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bell),
+                            contentDescription = "Notifications",
+                            tint = Color(0xFF4B5563),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 
-            // Main Content Area
+            // Main Scrollable Content Area
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
-                // User Greeting
+                // User Greeting Section
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp),
+                        .padding(top = 4.dp, bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Avatar with gradient border
                     Box(
                         modifier = Modifier
                             .size(56.dp)
                             .background(
-                                Brush.linearGradient(
+                                brush = Brush.linearGradient(
                                     colors = listOf(Color(0xFF99F6E4), Color(0xFF34D399))
                                 ),
-                                CircleShape
+                                shape = CircleShape
                             )
                             .padding(2.5.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onAboutYouClick() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFECFDF5), CircleShape).clip(CircleShape)) {
-                            // Avatar placeholder
-                            Text("R", modifier = Modifier.align(Alignment.Center), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0A735E))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFFECFDF5), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "RS",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = brandTealAccent
+                            )
                         }
                     }
+
                     Spacer(modifier = Modifier.width(14.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Good morning,", fontSize = 12.sp, color = Color(0xFF6B7280))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Rahul", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                            Box(
+                        Text(
+                            text = "Good morning,",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = textMuted
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Rahul",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textHeading,
+                                letterSpacing = (-0.3).sp
+                            )
+                            // "About You" pill button
+                            Row(
                                 modifier = Modifier
-                                    .background(Color(0xFFEAF5F2), RoundedCornerShape(16.dp))
-                                    .border(1.dp, Color(0x99A7F3D0), RoundedCornerShape(16.dp))
-                                    .clickable { onAboutYouClick() }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    .background(iconBadgeBg, RoundedCornerShape(16.dp))
+                                    .border(1.dp, Color(0xFFBCE3DA), RoundedCornerShape(16.dp))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { onAboutYouClick() }
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text("About You >", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0A735E))
+                                Text(
+                                    text = "About You",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = brandTealAccent
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_chevron_right_small),
+                                    contentDescription = "Go to About You",
+                                    tint = brandTealAccent,
+                                    modifier = Modifier.size(12.dp)
+                                )
                             }
                         }
                     }
                 }
-                
-                Text("How can we help you today?", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF4B5563))
+
+                Text(
+                    text = "How can we help you today?",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = textSubtitle
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Primary Hero Card
+                // Primary Hero Card ("Start Consultation")
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF015C49), RoundedCornerShape(16.dp))
-                        .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF015C49))
+                        .shadow(6.dp, RoundedCornerShape(20.dp), spotColor = brandTealDark)
+                        .background(brandTealDark, RoundedCornerShape(20.dp))
                         .padding(20.dp)
                 ) {
                     Row(verticalAlignment = Alignment.Top) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                                .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("📋", fontSize = 24.sp)
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_clipboard_check),
+                                contentDescription = "Consultation",
+                                tint = Color(0xFFA7F3D0),
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
+
                         Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Start Consultation", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Start Consultation",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("Tell us what's wrong and share your health history.", fontSize = 12.sp, color = Color(0xCCE6F4F1), lineHeight = 16.sp)
+                            Text(
+                                text = "Tell us what's wrong and share your health history.",
+                                fontSize = 12.sp,
+                                color = Color(0xCCE6F4F1),
+                                lineHeight = 17.sp
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = onStartConsultationClick,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.15f)),
-                                shape = RoundedCornerShape(12.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                modifier = Modifier.height(36.dp)
+                            Row(
+                                modifier = Modifier
+                                    .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { onStartConsultationClick() }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Text("Begin >", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                Text(
+                                    text = "Begin",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_chevron_right_small),
+                                    contentDescription = "Begin Consultation",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
                             }
                         }
                     }
@@ -173,70 +333,135 @@ fun HomeScreen(
 
                 // Secondary Actions List
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SecondaryActionCard("My Health Records", "Reports, prescriptions and previous visits.", "📂", onHealthRecordsClick)
-                    SecondaryActionCard("Appointments / Queue", "Your appointment or hospital queue status.", "📅", onAppointmentsClick)
-                    SecondaryActionCard("Family Members", "Manage your linked family members", "👥", onFamilyMembersClick)
+                    SecondaryActionCard(
+                        title = "My Health Records",
+                        subtitle = "Reports, prescriptions and previous visits.",
+                        iconRes = R.drawable.ic_document_text,
+                        onClick = onHealthRecordsClick
+                    )
+                    SecondaryActionCard(
+                        title = "Appointments / Queue",
+                        subtitle = "Your appointment or hospital queue status.",
+                        iconRes = R.drawable.ic_calendar,
+                        onClick = onAppointmentsClick
+                    )
+                    SecondaryActionCard(
+                        title = "Family Members",
+                        subtitle = "Manage your linked family members",
+                        iconRes = R.drawable.ic_users_family,
+                        onClick = onFamilyMembersClick
+                    )
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Recent Activity
+
+                // Recent Activity Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .shadow(1.dp, RoundedCornerShape(16.dp))
                         .background(Color.White, RoundedCornerShape(16.dp))
-                        .border(1.dp, Color(0xB3E5E7EB), RoundedCornerShape(16.dp))
+                        .border(1.dp, borderLight, RoundedCornerShape(16.dp))
                         .padding(16.dp)
                 ) {
                     Column {
-                        Text("RECENT ACTIVITY", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF), letterSpacing = 1.sp)
+                        Text(
+                            text = "RECENT ACTIVITY",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF9CA3AF),
+                            letterSpacing = 1.sp
+                        )
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("Your health activity will appear here after your first consultation.", fontSize = 12.sp, color = Color(0xFF6B7280), lineHeight = 18.sp)
+                        Text(
+                            text = "Your health activity will appear here after your first consultation.",
+                            fontSize = 12.sp,
+                            color = textMuted,
+                            lineHeight = 18.sp
+                        )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(24.dp))
+
+                Spacer(modifier = Modifier.height(28.dp))
             }
         }
     }
 }
 
 @Composable
-fun SecondaryActionCard(title: String, subtitle: String, icon: String, onClick: () -> Unit) {
+private fun SecondaryActionCard(
+    title: String,
+    subtitle: String,
+    iconRes: Int,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(1.dp, RoundedCornerShape(16.dp))
             .background(Color.White, RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xB3E5E7EB), RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .background(Color(0xFFEAF5F2), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(icon, fontSize = 20.sp)
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    tint = Color(0xFF0A735E),
+                    modifier = Modifier.size(22.dp)
+                )
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column {
-                Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827)
+                )
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(subtitle, fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                Text(
+                    text = subtitle,
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF6B7280)
+                )
             }
         }
-        Text(">", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF))
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chevron_right_small),
+            contentDescription = "Navigate",
+            tint = Color(0xFF9CA3AF),
+            modifier = Modifier.size(16.dp)
+        )
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme {
-        HomeScreen({}, {}, {}, {}, {}, {})
+        HomeScreen(
+            onNotificationsClick = {},
+            onAboutYouClick = {},
+            onStartConsultationClick = {},
+            onHealthRecordsClick = {},
+            onAppointmentsClick = {},
+            onFamilyMembersClick = {}
+        )
     }
 }
