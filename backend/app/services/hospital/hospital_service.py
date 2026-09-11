@@ -43,6 +43,10 @@ class ConnectionManager:
 ws_manager = ConnectionManager()
 
 
+def list_hospitals(db: Session) -> List[Hospital]:
+    return db.query(Hospital).order_by(Hospital.name.asc()).all()
+
+
 def add_patient_to_queue(db: Session, queue_in: QueueItemCreate) -> QueueItemResponse:
     hospital = db.query(Hospital).filter(Hospital.id == queue_in.hospital_id).first()
     if not hospital:
