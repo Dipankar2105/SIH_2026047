@@ -55,7 +55,6 @@ def search_drugs_endpoint(
         for d in drugs
     ]
 
-    # Return bare list for /api/prescriptions/drugs/search (Track C requirement)
     if request.url.path.startswith("/api/prescriptions/drugs/search"):
         return drug_list
 

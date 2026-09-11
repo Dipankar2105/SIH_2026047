@@ -7,7 +7,7 @@ from app.schemas.common import Stringified
 class ReminderCreateRequest(BaseModel):
     prescription_id: Optional[UUID] = None
     patient_phone: Optional[str] = None
-    notification_channel: str = "push"
+    notification_channel: str = 'push'
     meal_times: Optional[Dict[str, str]] = None
 
 
@@ -18,7 +18,7 @@ class ReminderResponse(BaseModel):
     reminder_time: Stringified
     message: Optional[str] = None
     status: str
-    sent: bool = False
+    sent: bool
 
 
 class ReminderListResponse(BaseModel):

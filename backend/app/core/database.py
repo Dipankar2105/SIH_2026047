@@ -2,27 +2,27 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
-from app.models.base import Base
+from app.core.config import settings
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+raw_url = settings.DATABASE_URL
 
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not set in .env")
+# Ensure dialect is psycopg (sync driver)
+if raw_url.startswith("postgresql+asyncpg://"):
+    raw_url = raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+elif raw_url.startswith("postgresql://"):
+    raw_url = raw_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-)
+# Convert direct IPv6 host to IPv4 Pooler host if direct host is detected
+if "db.tqyvoqddppdzhkcqochw.supabase.co" in raw_url:
+    raw_url = raw_url.replace("postgres:", "postgres.tqyvoqddppdzhkcqochw:", 1)
+    raw_url = raw_url.replace("db.tqyvoqddppdzhkcqochw.supabase.co:5432", "aws-0-ap-south-1.pooler.supabase.com:6543", 1)
 
-SessionLocal = sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False,
-)
+engine = create_engine(raw_url, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db():

@@ -65,5 +65,6 @@ class PatientSummaryResponse(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         if not self.plain_text and self.summary_text:
             self.plain_text = self.summary_text.replace("[PATIENT_SUMMARY]\n", "").replace("[DOCTOR_FINAL]\n", "").strip()
+
     warning_signs: List[str] = []
     follow_up_info: str = ""

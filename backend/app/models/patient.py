@@ -118,3 +118,21 @@ class Patient(Base):
         back_populates="primary_patient",
         cascade="all, delete-orphan",
     )
+
+    emergency_profile = relationship(
+        "EmergencyProfile",
+        back_populates="patient",
+        uselist=False,
+    )
+
+    women_health_timeline = relationship(
+        "WomenTimeline",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+    )
+
+    trusted_circle_permissions = relationship(
+        "TrustedCircle",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+    )

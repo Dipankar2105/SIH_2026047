@@ -11,6 +11,7 @@ from app.services.hospital.hospital_service import (
     get_live_queue,
     update_queue_status,
     get_hospital_dashboard,
+    list_hospitals,
     ws_manager,
 )
 from app.schemas.hospital import (
@@ -18,9 +19,23 @@ from app.schemas.hospital import (
     QueueItemResponse,
     QueueStatusUpdate,
     HospitalDashboardResponse,
+    HospitalResponse,
 )
 
 router = APIRouter(prefix="/hospital", tags=["Hospital Ops & Dashboard"])
+
+
+@router.get("/list", response_model=List[HospitalResponse])
+def list_hospitals_endpoint(db: Session = Depends(get_db)):
+    return [
+        HospitalResponse(
+            id=str(hospital.id),
+            name=hospital.name,
+            city=hospital.city,
+            state=hospital.state,
+        )
+        for hospital in list_hospitals(db)
+    ]
 
 
 @router.post("/queue/add", response_model=QueueItemResponse)

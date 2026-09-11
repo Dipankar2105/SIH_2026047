@@ -2,7 +2,16 @@ import uuid
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+
+class HospitalResponse(BaseModel):
+    id: str
+    name: str
+    city: Optional[str] = None
+    state: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class QueueItemCreate(BaseModel):

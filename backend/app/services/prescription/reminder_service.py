@@ -1,9 +1,7 @@
-import uuid
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+import json
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-
 from app.models.prescription import Prescription
 from app.models.prescription_item import PrescriptionItem
 from app.models.reminder import Reminder
@@ -16,7 +14,7 @@ FOOD_OFFSETS = {"before_food": -30, "after_food": 30, "with_food": 0, "empty_sto
 
 class ReminderService:
     def _parse_frequency(self, frequency: str) -> list:
-        parts = frequency.split("-") if frequency else []
+        parts = frequency.split("-")
         meals = []
         if len(parts) >= 1 and parts[0] == "1":
             meals.append("breakfast")
@@ -24,7 +22,7 @@ class ReminderService:
             meals.append("lunch")
         if len(parts) >= 3 and parts[2] == "1":
             meals.append("dinner")
-        return meals or ["breakfast", "dinner"]
+        return meals
 
     def _extract_food_relation(self, instructions: str) -> str:
         if not instructions:
@@ -44,8 +42,8 @@ class ReminderService:
         meals = self._parse_frequency(frequency)
         offset = FOOD_OFFSETS.get(food_relation, 0)
         times = []
-        base_date = datetime.now(timezone.utc)
-        for day in range(min(duration_days, 14)):  # schedule up to 14 days
+        base_date = datetime.now()
+        for day in range(duration_days):
             for meal in meals:
                 meal_time = datetime.strptime(MEAL_TIMES[meal], "%H:%M")
                 dt = base_date + timedelta(days=day)
@@ -54,17 +52,10 @@ class ReminderService:
                 times.append(dt)
         return times
 
-    def create_reminders(self, db: Session, prescription_id: Any) -> list:
-        if isinstance(prescription_id, str):
-            try:
-                prescription_id = uuid.UUID(prescription_id)
-            except Exception:
-                pass
-
+    def create_reminders(self, db: Session, prescription_id: str) -> list:
         rx = db.get(Prescription, prescription_id)
         if not rx:
             raise ValueError("Prescription not found")
-
         reminders = []
         for item in rx.items:
             freq = item.frequency or "1-0-1"
@@ -76,34 +67,27 @@ class ReminderService:
                     duration_days = int(item.duration.split()[0])
                 except Exception:
                     duration_days = 5
-
             times = self._compute_reminder_times(freq, food_relation, duration_days)
             for dt in times:
                 reminder = Reminder(
-                    prescription_id=rx.id,
+                    prescription_id=prescription_id,
                     reminder_time=dt,
                     message=f"Take {item.drug_name} {item.dosage or ''} - {food_relation.replace('_', ' ')}",
                     status="pending",
-                    sent=False,
                 )
                 db.add(reminder)
                 reminders.append(reminder)
-
         db.commit()
         audit_service.log(
-            db,
-            actor_id="system",
-            actor_type="system",
-            action="CREATE",
-            resource_type="reminder",
-            resource_id=str(rx.id),
+            db, actor_id="system", actor_type="system",
+            action="CREATE", resource_type="reminder", resource_id=str(prescription_id)
         )
         return reminders
 
     def send_push(self, topic: str, title: str, message: str):
         try:
             import httpx
-            with httpx.Client(timeout=5.0) as client:
+            with httpx.Client() as client:
                 client.post(
                     f"{settings.NTFY_BASE_URL}/{topic}",
                     data=message,
@@ -112,13 +96,7 @@ class ReminderService:
         except Exception:
             pass
 
-    def get_patient_reminders(self, db: Session, patient_id: Any) -> dict:
-        if isinstance(patient_id, str):
-            try:
-                patient_id = uuid.UUID(patient_id)
-            except Exception:
-                pass
-
+    def get_patient_reminders(self, db: Session, patient_id: str) -> dict:
         stmt = (
             select(Reminder)
             .join(Prescription, Reminder.prescription_id == Prescription.id)
@@ -131,6 +109,3 @@ class ReminderService:
 
 
 reminder_service = ReminderService()
-
-def create_reminders_for_prescription(db: Session, prescription_id: uuid.UUID) -> List[Reminder]:
-    return reminder_service.create_reminders(db, prescription_id)

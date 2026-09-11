@@ -73,7 +73,6 @@ class OCRService:
         except Exception:
             pass
 
-        # Fallback local extraction from decoded text if possible or filename metadata
         raw_text = ""
         try:
             raw_text = file_bytes.decode("utf-8", errors="ignore")

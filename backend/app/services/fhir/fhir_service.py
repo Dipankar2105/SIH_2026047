@@ -97,7 +97,7 @@ class FHIRService:
                 identifiers.append({"system": "https://doctor.ndhm.gov.in", "value": doctor.registration_number})
             if doctor.hpr_id:
                 identifiers.append({"system": "https://hpr.abdm.gov.in", "value": doctor.hpr_id})
-            
+
             entry.append({
                 "resource": {
                     "resourceType": "Practitioner",
@@ -225,7 +225,6 @@ class FHIRService:
 
 fhir_service = FHIRService()
 
-# Standalone functions for Track A backwards compatibility
 def export_patient_bundle(db: Session, patient_id: uuid.UUID, session_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
     return fhir_service.export_patient_bundle(db, patient_id, session_id)
 

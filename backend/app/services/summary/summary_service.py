@@ -99,7 +99,6 @@ class SummaryService:
         return out
 
     def _call_llm(self, prompt: str) -> str:
-        # Try Gemini if key configured
         if settings.GEMINI_API_KEY:
             try:
                 import google.generativeai as genai
@@ -111,7 +110,6 @@ class SummaryService:
             except Exception:
                 pass
 
-        # Try Groq if key configured
         if settings.GROQ_API_KEY:
             try:
                 from groq import Groq
@@ -124,7 +122,6 @@ class SummaryService:
             except Exception:
                 pass
 
-        # Robust local synthesis fallback
         return (
             "SOAP CLINICAL ENCOUNTER NOTE:\n"
             "Chief Complaint: Patient presenting for evaluation of symptoms recorded during triage intake.\n"
@@ -275,7 +272,6 @@ Format as: Chief Complaint, HPI, PMHx, Medications, Allergies, Family History, A
             except Exception:
                 pass
 
-        # Fetch clinical summary
         stmt = (
             select(Summary)
             .where(Summary.session_id == session_id, Summary.summary_type == "clinical")
@@ -344,7 +340,6 @@ Generate 3-5 simple paragraphs with key instructions and warning signs."""
             except Exception:
                 pass
 
-        # 1. Check if session_id is directly a summary ID
         summary = db.get(Summary, session_id)
         if summary:
             if summary.summary_type == "patient_plain":
@@ -358,7 +353,6 @@ Generate 3-5 simple paragraphs with key instructions and warning signs."""
                 pt_sum = db.execute(stmt).scalars().first()
                 if pt_sum:
                     return pt_sum
-            # Fallback: create a virtual plain-language response from this clinical summary
             clean_text = summary.summary_text.replace("[DOCTOR_FINAL]\n", "").replace("[PATIENT_SUMMARY]\n", "").strip()
             return Summary(
                 id=summary.id,
@@ -371,7 +365,6 @@ Generate 3-5 simple paragraphs with key instructions and warning signs."""
                 created_at=summary.created_at,
             )
 
-        # 2. Look up by session_id
         stmt = (
             select(Summary)
             .where(Summary.session_id == session_id, Summary.summary_type == "patient_plain")
@@ -390,7 +383,7 @@ Generate 3-5 simple paragraphs with key instructions and warning signs."""
 
 summary_service = SummaryService()
 
-# Standalone functions for Track A backwards compatibility
+
 def get_summary(db: Session, summary_id: uuid.UUID) -> Summary:
     s = summary_service.get_summary(db, summary_id)
     if not s:

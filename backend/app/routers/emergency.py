@@ -1,107 +1,49 @@
-import uuid
-from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone, timedelta
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
-from app.core.rbac import require_roles
-from app.core.security import create_access_token, decode_access_token
-from app.models.patient import Patient
-from app.models.prescription import Prescription
-from app.models.red_flag import RedFlag
+from app.core.auth import require_roles
+from app.schemas.emergency import (
+    EmergencyProfileCreate,
+    EmergencyProfileResponse,
+    EmergencyCardPublicResponse,
+)
+from app.services.emergency.emergency_service import emergency_service
 
-router = APIRouter(prefix="/emergency", tags=["Emergency Health Record"])
+
+router = APIRouter(prefix="/api/emergency", tags=["Emergency Golden Hour"])
 
 
-@router.get("/qr")
-def generate_emergency_qr(
-    current_user: Dict[str, Any] = Depends(require_roles("patient"))
+@router.post("/profile", response_model=EmergencyProfileResponse, status_code=status.HTTP_201_CREATED)
+def create_or_update_profile(
+    payload: EmergencyProfileCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_roles("patient", "doctor", "admin")),
 ):
-    """
-    Generates a secure, long-lived token representing the Golden Health Record QR.
-    The client can encode the returned URL into a QR code.
-    """
-    patient_id = current_user.get("sub") or current_user.get("patient_id")
-    
-    # Create a long-lived JWT for emergency access (e.g. 5 years)
-    payload = {
-        "sub": str(patient_id),
-        "role": "emergency_responder"
-    }
-    
-    # 5 years expiration
-    token = create_access_token(payload, expires_delta=timedelta(days=365 * 5))
-    
-    return {
-        "emergency_token": token,
-        "qr_url": f"/api/emergency/record/{token}"
-    }
+    result = emergency_service.create_or_update_profile(
+        db,
+        patient_id=str(payload.patient_id),
+        data=payload.model_dump(exclude={"patient_id"}),
+    )
+    return EmergencyProfileResponse.model_validate(result)
 
 
-@router.get("/record/{token}")
-def get_emergency_record(token: str, db: Session = Depends(get_db)):
-    """
-    Retrieves limited critical data for first responders using the QR code token.
-    Requires no standard auth, only the signed emergency token.
-    """
-    try:
-        payload = decode_access_token(token)
-        if payload.get("role") != "emergency_responder":
-            raise HTTPException(status_code=403, detail="Invalid token scope")
-        
-        patient_id = payload.get("sub")
-        if not patient_id:
-            raise HTTPException(status_code=401, detail="Invalid token format")
-            
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate emergency token",
-        )
+@router.get("/qr/{qr_token}", response_model=EmergencyCardPublicResponse)
+def get_public_card(qr_token: str, db: Session = Depends(get_db)):
+    result = emergency_service.get_public_card_by_token(db, qr_token=qr_token)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Emergency profile not found or inactive")
+    return EmergencyCardPublicResponse(**result)
 
-    patient = db.get(Patient, patient_id)
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
 
-    # Fetch critical info: recent red flags and active prescriptions
-    # For emergency, we only show the last 3 months of prescriptions
-    three_months_ago = datetime.now(timezone.utc) - timedelta(days=90)
-    
-    prescriptions = db.query(Prescription).filter(
-        Prescription.patient_id == patient_id,
-        Prescription.created_at >= three_months_ago
-    ).all()
-    
-    active_meds = []
-    for rx in prescriptions:
-        for item in rx.items:
-            active_meds.append(item.drug_name)
-            
-    # Red flags
-    red_flags = db.query(RedFlag).filter(
-        RedFlag.patient_id == patient_id
-    ).order_by(RedFlag.created_at.desc()).limit(5).all()
-
-    # Calculate age
-    age = None
-    if patient.date_of_birth:
-        today = datetime.now().date()
-        age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
-
-    return {
-        "patient": {
-            "name": f"{patient.first_name} {patient.last_name or ''}".strip(),
-            "gender": patient.gender,
-            "age": age,
-            "emergency_contact": {
-                "name": patient.emergency_contact_name,
-                "phone": patient.emergency_contact_phone
-            }
-        },
-        "critical_health_data": {
-            "recent_medications": list(set(active_meds)),
-            "recent_red_flags": [rf.flag_text for rf in red_flags]
-        }
-    }
+@router.get("/break-glass/{patient_id}")
+def break_glass_er_access(
+    patient_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_roles("doctor")),
+):
+    doctor_id = current_user["sub"]
+    result = emergency_service.break_glass_er_access(db, patient_id=patient_id, doctor_id=doctor_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Emergency profile not found")
+    return result

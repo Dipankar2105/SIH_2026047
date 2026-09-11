@@ -2,8 +2,8 @@
 Seed script: bulk-insert drug data from data/kaggle_drugs.csv into the Supabase drugs table.
 
 Usage:
-    .\.venv\Scripts\python.exe scripts/seed_drugs.py
-    .\.venv\Scripts\python.exe scripts/seed_drugs.py --force
+    .\\.venv\\Scripts\\python.exe scripts/seed_drugs.py
+    .\\.venv\\Scripts\\python.exe scripts/seed_drugs.py --force
 
 Architecture:
     Primary path uses SQLAlchemy Session from app.core.database with
@@ -30,14 +30,6 @@ CSV_PATH = os.path.join(
     "data",
     "kaggle_drugs.csv",
 )
-if not os.path.exists(CSV_PATH):
-    # Fallback to root directory if backend/data/kaggle_drugs.csv is not present
-    alt_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        "kaggle_drugs.csv",
-    )
-    if os.path.exists(alt_path):
-        CSV_PATH = alt_path
 
 CHUNK_SIZE = 5_000
 SKIP_THRESHOLD = 1_000

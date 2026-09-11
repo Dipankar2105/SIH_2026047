@@ -66,7 +66,7 @@ class DocumentSourceResponse(BaseModel):
 
 class TimelineEvent(BaseModel):
     id: str
-    event_type: str  # visit, document, prescription, summary
+    event_type: str
     date: datetime
     title: str
     details: Dict[str, Any]

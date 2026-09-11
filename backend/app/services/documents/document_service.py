@@ -39,7 +39,6 @@ class DocumentService:
         session_id: Optional[Any] = None,
         doc_in: Optional[DocumentCreate] = None,
     ) -> Document:
-        # Handle call with doc_in parameter
         if doc_in is not None:
             patient_id = doc_in.patient_id
             document_type = doc_in.document_type
@@ -66,7 +65,6 @@ class DocumentService:
             except Exception:
                 pass
 
-        # If file_bytes provided, attempt Supabase Storage upload and OCR extraction
         if file_bytes is not None:
             storage_path = f"{patient_id}/{uuid.uuid4()}/{filename or 'document.pdf'}"
             try:
@@ -201,7 +199,6 @@ class DocumentService:
 
         events: List[TimelineEvent] = []
 
-        # 1. Visits
         visits = db.query(VisitHistory).filter(VisitHistory.patient_id == patient_id).all()
         for v in visits:
             chief_complaint = getattr(v, "chief_complaint", None) or getattr(v, "diagnosis", None) or "Consultation"
@@ -221,7 +218,6 @@ class DocumentService:
                 )
             )
 
-        # 2. Documents
         documents = db.query(Document).filter(Document.patient_id == patient_id).all()
         for d in documents:
             events.append(
@@ -240,7 +236,6 @@ class DocumentService:
                 )
             )
 
-        # 3. Prescriptions
         prescriptions = db.query(Prescription).filter(Prescription.patient_id == patient_id).all()
         for p in prescriptions:
             events.append(
@@ -267,7 +262,6 @@ class DocumentService:
                 )
             )
 
-        # 4. Summaries
         summaries = db.query(Summary).filter(Summary.patient_id == patient_id).all()
         for s in summaries:
             events.append(
@@ -384,7 +378,7 @@ class DocumentService:
 
 document_service = DocumentService()
 
-# Standalone functions forwarding to document_service for Track A compatibility
+
 def upload_document(db: Session, doc_in: DocumentCreate) -> Document:
     return document_service.upload_document(db, doc_in=doc_in)
 
