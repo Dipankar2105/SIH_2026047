@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Brand Scale */
+  --color-brand-50: #e8f5f2;
+  --color-brand-100: #c5e6df;
+  --color-brand-150: #aed9cf;
+  --color-brand-200: #9ed5c9;
+  --color-brand-300: #73c4b1;
+  --color-brand-400: #4db89e;
+  --color-brand-500: #0f766e;
+  --color-brand-550: #0c685f;
+  --color-brand-600: #0d635c;
+  --color-brand-700: #00594c;
+  --color-brand-750: #004d41;
+  --color-brand-800: #00473d;
+  --color-brand-900: #00362e;
+  --color-brand-950: #002722;
+  --color-brand-subtle: #5f8b83;
+  --color-brand-accent: #2dd4bf;
+  --color-brand-accent-600: #0d9488;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Clinical / Page */
+  --color-clinical-bg: #f8fafc;
+  --color-clinical-surface: #ffffff;
+  --color-clinical-border: #e2e8f0;
+  --color-clinical-border-light: #f1f5f9;
+  --color-clinical-muted: #64748b;
+  --color-clinical-text: #0f172a;
+  --color-clinical-text-secondary: #334155;
+  --color-clinical-lightgreen: #e6f4f1;
+  --color-clinical-hover: #f1f5f9;
+
+  /* Status */
+  --color-status-ready: #15803d;
+  --color-status-ready-bg: #eaf8f1;
+  --color-status-ready-border: #bbf7d0;
+  --color-status-priority: #b42318;
+  --color-status-priority-bg: #fff4f2;
+  --color-status-priority-border: #fecaca;
+  --color-status-redflag: #d92d20;
+  --color-status-redflag-bg: #fef2f2;
+  --color-status-redflag-border: #fecaca;
+  --color-status-amber: #d97706;
+  --color-status-amber-bg: #fef9ee;
+  --color-status-amber-border: #fde68a;
+  --color-status-emerald: #059669;
+  --color-status-emerald-bg: #ecfdf5;
+  --color-status-emerald-border: #a7f3d0;
+  --color-status-info: #2563eb;
+  --color-status-info-bg: #eff6ff;
+  --color-status-info-border: #bfdbfe;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+
+  /* Radii */
+  --radius-clinical-sm: 6px;
+  --radius-clinical-md: 10px;
+  --radius-clinical-lg: 14px;
+  --radius-clinical-xl: 18px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-clinical-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.08);
+  --shadow-clinical-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-clinical-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-clinical-bg);
+  color: var(--color-clinical-text);
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 89, 76, 0.12);
+  border-color: var(--color-brand-700);
+}
+
+::selection {
+  background-color: var(--color-brand-100);
+  color: var(--color-brand-900);
 }
