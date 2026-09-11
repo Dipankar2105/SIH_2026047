@@ -20,10 +20,18 @@ import com.example.aarogyaflow.data.remote.ApiService
 import com.example.aarogyaflow.feature.aboutyou.AboutYouScreen
 import com.example.aarogyaflow.feature.aboutyou.EditHealthDetailsScreen
 import com.example.aarogyaflow.feature.aboutyou.HealthData
+import com.example.aarogyaflow.feature.aboutyou.VitalsData
 import com.example.aarogyaflow.feature.auth.AbhaIdScreen
 import com.example.aarogyaflow.feature.auth.ConsentScreen
 import com.example.aarogyaflow.feature.auth.VerifyMobileScreen
 import com.example.aarogyaflow.feature.consultation.AllopathicWelcomeScreen
+import com.example.aarogyaflow.feature.consultation.AyushAssessmentState
+import com.example.aarogyaflow.feature.consultation.AyushBodyConstitutionScreen
+import com.example.aarogyaflow.feature.consultation.AyushFoodDigestionScreen
+import com.example.aarogyaflow.feature.consultation.AyushRoutineEnergyScreen
+import com.example.aarogyaflow.feature.consultation.AyushSleepRoutineScreen
+import com.example.aarogyaflow.feature.consultation.AyushTroublingScreen
+import com.example.aarogyaflow.feature.consultation.AyushWelcomeScreen
 import com.example.aarogyaflow.feature.consultation.ChooseConsultationScreen
 import com.example.aarogyaflow.feature.consultation.ConsultationSuccessScreen
 import com.example.aarogyaflow.feature.consultation.RedFlagTriageScreen
@@ -32,13 +40,30 @@ import com.example.aarogyaflow.feature.family.AddFamilyMemberScreen
 import com.example.aarogyaflow.feature.family.FamilyMemberDisclaimerScreen
 import com.example.aarogyaflow.feature.family.FamilyMember
 import com.example.aarogyaflow.feature.family.FamilyMemberOtpScreen
+import com.example.aarogyaflow.feature.family.EditFamilyMemberScreen
 import com.example.aarogyaflow.feature.family.FamilyMemberSummaryScreen
 import com.example.aarogyaflow.feature.family.FamilyMembersScreen
+import com.example.aarogyaflow.feature.healthrecords.AddRecordScreen
+import com.example.aarogyaflow.feature.healthrecords.HealthRecord
+import com.example.aarogyaflow.feature.healthrecords.HealthRecordsScreen
 import com.example.aarogyaflow.feature.home.HomeScreen
+import com.example.aarogyaflow.feature.appointments.Appointment
+import com.example.aarogyaflow.feature.appointments.AppointmentConfirmationScreen
+import com.example.aarogyaflow.feature.appointments.AppointmentsScreen
+import com.example.aarogyaflow.feature.appointments.BookAppointmentScreen
+import com.example.aarogyaflow.feature.appointments.Doctor
+import com.example.aarogyaflow.feature.appointments.ConsultationType
+import com.example.aarogyaflow.feature.appointments.QueueInfo
+import com.example.aarogyaflow.feature.appointments.QueueStatus
 import com.example.aarogyaflow.feature.notifications.NotificationsScreen
 import com.example.aarogyaflow.feature.profile.EditProfileScreen
 import com.example.aarogyaflow.feature.profile.ProfileData
+import com.example.aarogyaflow.feature.prescriptions.PrescriptionsScreen
+import com.example.aarogyaflow.feature.prescriptions.RecommendedTest
+import com.example.aarogyaflow.feature.prescriptions.demoPrescriptions
+import com.example.aarogyaflow.feature.prescriptions.demoRecommendedTests
 import com.example.aarogyaflow.feature.profile.ProfileScreen
+import com.example.aarogyaflow.feature.vitals.VitalsScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -74,10 +99,40 @@ data object UploadReports : NavKey
 data class ConsultationSuccess(val appointmentNumber: String = "42", val waitMinutes: String = "15") : NavKey
 
 @Serializable
+data object AyushWelcome : NavKey
+
+@Serializable
+data object AyushTroubling : NavKey
+
+@Serializable
+data object AyushBodyConstitution : NavKey
+
+@Serializable
+data object AyushRoutineEnergy : NavKey
+
+@Serializable
+data object AyushFoodDigestion : NavKey
+
+@Serializable
+data object AyushSleepRoutine : NavKey
+
+@Serializable
 data object HealthRecords : NavKey
 
 @Serializable
+data object AddRecord : NavKey
+
+@Serializable
 data object Appointments : NavKey
+
+@Serializable
+data object BookAppointment : NavKey
+
+@Serializable
+data class AppointmentDetail(val appointmentId: String) : NavKey
+
+@Serializable
+data object PrescriptionsTests : NavKey
 
 @Serializable
 data object FamilyMembers : NavKey
@@ -95,10 +150,16 @@ data class FamilyMemberOtp(val abhaId: String, val relationship: String) : NavKe
 data class FamilyMemberSummary(@Contextual val member: FamilyMember) : NavKey
 
 @Serializable
+data class EditFamilyMember(@Contextual val member: FamilyMember) : NavKey
+
+@Serializable
 data object AboutYou : NavKey
 
 @Serializable
 data object EditHealthDetails : NavKey
+
+@Serializable
+data object Vitals : NavKey
 
 @Serializable
 data object Notifications : NavKey
@@ -118,6 +179,12 @@ fun MainNavigation(apiService: ApiService) {
   // In-memory demo state for Profile & Health Details
   var profileState by remember { mutableStateOf(ProfileData()) }
   var healthState by remember { mutableStateOf(HealthData()) }
+
+  var vitalsState by remember { mutableStateOf(VitalsData()) }
+
+  var ayushAssessmentState by remember { mutableStateOf(AyushAssessmentState()) }
+
+  var healthRecordsState by remember { mutableStateOf<List<HealthRecord>>(emptyList()) }
 
   // Family members demo state
   var familyState by remember { mutableStateOf(
@@ -165,9 +232,36 @@ fun MainNavigation(apiService: ApiService) {
         hasAlert = false
       )
     )
-  )}
+   )}
 
-  NavDisplay(
+   val demoDoctors = listOf(
+       Doctor(
+           id = "doc_1",
+           name = "Dr. Rajesh Kumar",
+           specialty = "General Medicine",
+           hospitalName = "City Hospital & Research Centre",
+           consultationType = ConsultationType.MODERN_MEDICINE
+       ),
+       Doctor(
+           id = "doc_2",
+           name = "Dr. Priya Sharma",
+           specialty = "Internal Medicine",
+           hospitalName = "MediCare Multi-Specialty",
+           consultationType = ConsultationType.MODERN_MEDICINE
+       ),
+       Doctor(
+           id = "doc_3",
+           name = "Dr. V. K. Shastri",
+           specialty = "Ayurveda",
+           hospitalName = "AYUSH Health Centre",
+           consultationType = ConsultationType.AYUSH
+       )
+   )
+
+   var appointmentsState by remember { mutableStateOf<List<Appointment>>(emptyList()) }
+   val activeQueue = appointmentsState.firstOrNull { it.queueStatus == QueueStatus.IN_PROGRESS }
+
+   NavDisplay(
     backStack = backStack,
     onBack = { 
       if (backStack.size > 1) {
@@ -208,7 +302,9 @@ fun MainNavigation(apiService: ApiService) {
                 onStartConsultationClick = { backStack.add(ChooseConsultation) },
                 onHealthRecordsClick = { backStack.add(HealthRecords) },
                 onAppointmentsClick = { backStack.add(Appointments) },
-                onFamilyMembersClick = { backStack.add(FamilyMembers) }
+                onFamilyMembersClick = { backStack.add(FamilyMembers) },
+                onPrescriptionsClick = { backStack.add(PrescriptionsTests) },
+                onVitalsClick = { backStack.add(Vitals) }
             )
         }
         entry<Notifications> {
@@ -237,6 +333,16 @@ fun MainNavigation(apiService: ApiService) {
                 }
             )
         }
+        entry<Vitals> {
+            VitalsScreen(
+                vitals = vitalsState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onSaveClick = { updated ->
+                    vitalsState = updated
+                    backStack.removeLastOrNull()
+                }
+            )
+        }
         entry<Profile> {
             ProfileScreen(
                 profileData = profileState,
@@ -260,7 +366,63 @@ fun MainNavigation(apiService: ApiService) {
             ChooseConsultationScreen(
                 onBackClick = { backStack.removeLastOrNull() },
                 onAllopathyClick = { backStack.add(AllopathicWelcome) },
-                onAyushClick = { /* AYUSH flow */ }
+                onAyushClick = { backStack.add(AyushWelcome) }
+            )
+        }
+        entry<AyushWelcome> {
+            AyushWelcomeScreen(
+                onBackClick = { backStack.removeLastOrNull() },
+                onStartChatClick = { backStack.add(AyushTroubling) }
+            )
+        }
+        entry<AyushTroubling> {
+            AyushTroublingScreen(
+                assessmentState = ayushAssessmentState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onContinueClick = { concern ->
+                    ayushAssessmentState = ayushAssessmentState.copy(concern = concern)
+                    backStack.add(AyushBodyConstitution)
+                }
+            )
+        }
+        entry<AyushBodyConstitution> {
+            AyushBodyConstitutionScreen(
+                assessmentState = ayushAssessmentState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onContinueClick = { constitution ->
+                    ayushAssessmentState = ayushAssessmentState.copy(bodyConstitution = constitution)
+                    backStack.add(AyushRoutineEnergy)
+                }
+            )
+        }
+        entry<AyushRoutineEnergy> {
+            AyushRoutineEnergyScreen(
+                assessmentState = ayushAssessmentState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onContinueClick = { routineEnergy ->
+                    ayushAssessmentState = ayushAssessmentState.copy(routineEnergy = routineEnergy)
+                    backStack.add(AyushFoodDigestion)
+                }
+            )
+        }
+        entry<AyushFoodDigestion> {
+            AyushFoodDigestionScreen(
+                assessmentState = ayushAssessmentState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onContinueClick = { foodDigestion ->
+                    ayushAssessmentState = ayushAssessmentState.copy(foodDigestion = foodDigestion)
+                    backStack.add(AyushSleepRoutine)
+                }
+            )
+        }
+        entry<AyushSleepRoutine> {
+            AyushSleepRoutineScreen(
+                assessmentState = ayushAssessmentState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onContinueClick = { sleepRoutine ->
+                    ayushAssessmentState = ayushAssessmentState.copy(sleepRoutine = sleepRoutine)
+                    backStack.add(UploadReports)
+                }
             )
         }
         entry<AllopathicWelcome> {
@@ -306,8 +468,96 @@ fun MainNavigation(apiService: ApiService) {
                 }
             )
         }
-        entry<HealthRecords> { PlaceholderScreen("My Health Records") { backStack.removeLastOrNull() } }
-        entry<Appointments> { PlaceholderScreen("Appointments / Queue") { backStack.removeLastOrNull() } }
+        entry<HealthRecords> {
+            HealthRecordsScreen(
+                healthRecords = healthRecordsState,
+                onBackClick = { backStack.removeLastOrNull() },
+                onAddRecordClick = { backStack.add(AddRecord) },
+                onRecordSaved = { record ->
+                    healthRecordsState = healthRecordsState + record
+                }
+            )
+        }
+        entry<AddRecord> {
+            AddRecordScreen(
+                onBackClick = { backStack.removeLastOrNull() },
+                onRecordSelected = { record ->
+                    healthRecordsState = healthRecordsState + record
+                    backStack.removeLastOrNull()
+                }
+            )
+        }
+        entry<Appointments> {
+            AppointmentsScreen(
+                upcomingAppointments = appointmentsState.filter { it.queueStatus == QueueStatus.UPCOMING || it.queueStatus == QueueStatus.IN_PROGRESS },
+                pastAppointments = appointmentsState.filter { it.queueStatus == QueueStatus.COMPLETED || it.queueStatus == QueueStatus.CANCELLED },
+                activeQueue = activeQueue,
+                onBackClick = { backStack.removeLastOrNull() },
+                onBookAppointmentClick = { backStack.add(BookAppointment) },
+                onViewAppointmentClick = { appointment ->
+                    backStack.add(AppointmentDetail(appointment.id))
+                }
+            )
+        }
+        entry<BookAppointment> {
+            BookAppointmentScreen(
+                doctors = demoDoctors,
+                onBackClick = { backStack.removeLastOrNull() },
+                onConfirmClick = { doctor, consultationType, date, time ->
+                    val newAppointment = Appointment(
+                        id = "apt_${System.currentTimeMillis()}",
+                        patientName = "Rahul Sharma",
+                        doctorName = doctor.name,
+                        doctorSpecialty = doctor.specialty,
+                        hospitalName = doctor.hospitalName,
+                        consultationType = consultationType,
+                        dateTime = java.time.Instant.from(java.time.ZonedDateTime.of(date, time, java.time.ZoneId.systemDefault())),
+                        tokenNumber = "T-${(100..999).random()}",
+                        queueStatus = QueueStatus.UPCOMING,
+                        currentToken = if (consultationType == ConsultationType.MODERN_MEDICINE) "T-${(90..99).random()}" else null,
+                        estimatedWaitMinutes = if (consultationType == ConsultationType.MODERN_MEDICINE) "15 min" else null,
+                        notes = if (consultationType == ConsultationType.AYUSH) "Arrive 10 mins early for registration" else null
+                    )
+                    appointmentsState = appointmentsState + newAppointment
+                    backStack.removeLastOrNull()
+                    backStack.add(AppointmentDetail(newAppointment.id))
+                }
+            )
+        }
+        entry<AppointmentDetail> { key ->
+            val appointment = appointmentsState.find { it.id == key.appointmentId }
+            if (appointment != null) {
+                AppointmentConfirmationScreen(
+                    appointment = appointment,
+                    onBackToAppointmentsClick = {
+                        while (backStack.lastOrNull() is BookAppointment || backStack.lastOrNull() is AppointmentDetail) {
+                            backStack.removeLastOrNull()
+                        }
+                        if (backStack.isEmpty()) {
+                            backStack.add(Home)
+                        }
+                    }
+                )
+            } else {
+                PlaceholderScreen("Appointment not found") {
+                    backStack.removeLastOrNull()
+                }
+            }
+        }
+        entry<PrescriptionsTests> {
+            PrescriptionsScreen(
+                prescriptions = demoPrescriptions,
+                recommendedTests = demoRecommendedTests,
+                onBackClick = { backStack.removeLastOrNull() },
+                onUploadReportClick = { test ->
+                    snackbarHostState.let { hostState ->
+                        scope.launch {
+                            hostState.showSnackbar("Upload Report clicked for: ${test.testName}")
+                        }
+                    }
+                }
+            )
+        }
         entry<FamilyMembers> {
             FamilyMembersScreen(
                 snackbarHostState = snackbarHostState,
@@ -379,11 +629,23 @@ fun MainNavigation(apiService: ApiService) {
             FamilyMemberSummaryScreen(
                 member = key.member,
                 onBackClick = { backStack.removeLastOrNull() },
-                onEditClick = { /* Edit member details */ },
+                onEditClick = { backStack.add(EditFamilyMember(key.member)) },
                 onViewRecordsClick = { backStack.add(HealthRecords) },
                 onStartConsultationClick = { backStack.add(ChooseConsultation) },
                 onCallDoctorClick = { /* Call doctor action */ },
                 onEmergencyClick = { /* Emergency action */ }
+            )
+        }
+        entry<EditFamilyMember> { key ->
+            EditFamilyMemberScreen(
+                member = key.member,
+                onBackClick = { backStack.removeLastOrNull() },
+                onSaveClick = { updatedMember ->
+                    familyState = familyState.map {
+                        if (it.id == updatedMember.id) updatedMember else it
+                    }
+                    backStack.removeLastOrNull()
+                }
             )
         }
       },

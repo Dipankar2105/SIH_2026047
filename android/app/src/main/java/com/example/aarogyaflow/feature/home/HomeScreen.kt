@@ -33,7 +33,9 @@ fun HomeScreen(
     onStartConsultationClick: () -> Unit,
     onHealthRecordsClick: () -> Unit,
     onAppointmentsClick: () -> Unit,
-    onFamilyMembersClick: () -> Unit
+    onFamilyMembersClick: () -> Unit,
+    onPrescriptionsClick: () -> Unit,
+    onVitalsClick: () -> Unit
 ) {
     // Exact Stitch color tokens for Home (home_aarogyaflow)
     val bgLight = Color(0xFFF5F8F9)
@@ -351,6 +353,18 @@ fun HomeScreen(
                         iconRes = R.drawable.ic_users_family,
                         onClick = onFamilyMembersClick
                     )
+                    SecondaryActionCard(
+                        title = "Prescriptions & Tests",
+                        subtitle = "Medicines and recommended diagnostics",
+                        iconRes = R.drawable.ic_pills,
+                        onClick = onPrescriptionsClick
+                    )
+                    SecondaryActionCard(
+                        title = "Vitals",
+                        subtitle = "Track and record your vital signs",
+                        iconRes = R.drawable.ic_heart_capsule,
+                        onClick = onVitalsClick
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -461,7 +475,9 @@ fun HomeScreenPreview() {
             onStartConsultationClick = {},
             onHealthRecordsClick = {},
             onAppointmentsClick = {},
-            onFamilyMembersClick = {}
+            onFamilyMembersClick = {},
+            onPrescriptionsClick = {},
+            onVitalsClick = {}
         )
     }
 }
