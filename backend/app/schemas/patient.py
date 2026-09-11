@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class PatientCreate(BaseModel):
@@ -77,6 +77,43 @@ class MobileOtpVerify(BaseModel):
 class MobileOtpResponse(BaseModel):
     txnId: str
     message: str
+
+
+class PatientLoginOtpRequest(BaseModel):
+    abha_id: Optional[str] = Field(None, description="ABHA Health ID (with or without hyphens)")
+    abha_address: Optional[str] = Field(None, description="ABHA address e.g. username@abdm")
+    mobile: Optional[str] = Field(None, pattern=r"^\d{10}$", description="10-digit Indian mobile number to receive OTP")
+
+    @model_validator(mode="after")
+    def _require_identifier(self):
+        if not (self.abha_id or self.abha_address or self.mobile):
+            raise ValueError("Provide at least one of abha_id, abha_address, or mobile")
+        return self
+
+
+class PatientLoginOtpResponse(BaseModel):
+    txnId: str
+    masked_mobile: str
+    message: str = "OTP sent successfully to your registered mobile number"
+
+
+class PatientLoginVerifyRequest(BaseModel):
+    txn_id: str = Field(..., description="Transaction ID returned by the request-otp step")
+    otp: str = Field(..., min_length=4, max_length=6, description="4 to 6 digit OTP")
+    abha_id: Optional[str] = Field(None, description="ABHA Health ID of the patient logging in")
+    patient_id: Optional[uuid.UUID] = Field(None, description="Existing patient UUID to authenticate")
+
+    @model_validator(mode="after")
+    def _require_identifier(self):
+        if not (self.abha_id or self.patient_id):
+            raise ValueError("Provide either abha_id or patient_id")
+        return self
+
+
+class PatientLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    patient: PatientResponse
 
 
 class TranslateRequest(BaseModel):

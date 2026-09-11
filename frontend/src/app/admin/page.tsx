@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -314,20 +315,18 @@ export default function AdminDashboardPage() {
             <CardTitle className="text-[14px]">Quick actions</CardTitle>
           </CardHeader>
           <CardContent className="!pt-2 space-y-2">
-            <button
-              type="button"
-              onClick={() => showActionToast("Feature coming soon")}
+            <Link
+              href="/admin/queue"
               className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#BCE7D5] hover:bg-[#F7FCFA]"
             >
               <span className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8F7EF] text-[#087E6A]"><Users className="h-3.5 w-3.5" /></span>Open queue control</span><ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => showActionToast("Feature coming soon")}
+            </Link>
+            <Link
+              href="/admin/alerts"
               className="flex w-full items-center justify-between rounded-xl border border-[#E5EAF0] bg-white p-3 text-left text-[11px] font-semibold text-[#4B586C] hover:border-[#F5D9AE] hover:bg-[#FFFBF3]"
             >
               <span className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FFF4E5] text-[#B66A00]"><Activity className="h-3.5 w-3.5" /></span>Review priority alerts</span><ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
+            </Link>
           </CardContent>
         </Card>
       </div>

@@ -1,7 +1,9 @@
 import uuid
+from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -44,6 +46,10 @@ from app.schemas.patient import (
     MobileOtpResponse,
     TranslateRequest,
     TranslateResponse,
+    PatientLoginOtpRequest,
+    PatientLoginOtpResponse,
+    PatientLoginVerifyRequest,
+    PatientLoginResponse,
 )
 from app.schemas.family_member import FamilyMemberCreate, FamilyMemberResponse
 from app.schemas.consent import (
@@ -137,6 +143,189 @@ def verify_mobile_otp_endpoint(data: MobileOtpVerify, db: Session = Depends(get_
         patient = get_patient(db, data.patient_id)
         result["patient"] = PatientResponse.model_validate(patient)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Helper utilities for ABHA Patient Login
+# ---------------------------------------------------------------------------
+
+_GENDER_MAP: Dict[str, str] = {"M": "male", "F": "female", "O": "other"}
+
+
+def _normalize_abha_id(value: str) -> str:
+    return "".join(ch for ch in (value or "") if ch.isdigit())
+
+
+def _mask_mobile(mobile: str) -> str:
+    return f"******{mobile[-4:]}"
+
+
+def _parse_abha_dob(value: Any) -> Optional[date]:
+    if not value or not isinstance(value, str):
+        return None
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _map_gender(value: Any) -> Optional[str]:
+    if not value:
+        return None
+    raw = str(value).strip()
+    upper = raw.upper()
+    return _GENDER_MAP.get(upper, raw.lower())
+
+
+def _extract_abdm_profile(result: dict) -> dict:
+    profile = result.get("profile")
+    if isinstance(profile, dict):
+        return profile
+    if isinstance(profile, list) and profile and isinstance(profile[0], dict):
+        return profile[0]
+    return {}
+
+
+def _find_patient_by_abha(db: Session, abha_id: Optional[str], abha_address: Optional[str] = None):
+    from app.models.patient import Patient
+
+    patient = None
+
+    if abha_id:
+        patient = db.query(Patient).filter(Patient.abha_id == abha_id).first()
+        if not patient:
+            norm = _normalize_abha_id(abha_id)
+            if norm:
+                patient = (
+                    db.query(Patient)
+                    .filter(func.replace(Patient.abha_id, "-", "") == norm)
+                    .first()
+                )
+
+    if not patient and abha_address:
+        patient = db.query(Patient).filter(Patient.abha_address == abha_address).first()
+
+    return patient
+
+
+def _register_patient_from_abdm(db: Session, abha_id: str, verif_result: dict):
+    profile = _extract_abdm_profile(verif_result)
+    mobile = verif_result.get("mobile") or profile.get("mobile") or None
+
+    phr_raw = profile.get("phrAddress") or profile.get("abha_address") or profile.get("abhaAddress")
+    abha_address = None
+    if isinstance(phr_raw, list) and phr_raw:
+        abha_address = phr_raw[0]
+    elif isinstance(phr_raw, str):
+        abha_address = phr_raw
+
+    create_in = PatientCreate(
+        first_name=profile.get("firstName") or "Patient",
+        last_name=profile.get("lastName"),
+        date_of_birth=_parse_abha_dob(profile.get("dob")),
+        gender=_map_gender(profile.get("gender")),
+        phone=mobile,
+        abha_id=(abha_id or "").strip() or None,
+        abha_address=abha_address,
+    )
+    return register_patient(db, create_in)
+
+
+# ---------------------------------------------------------------------------
+# Patient ABHA Login Endpoints
+# ---------------------------------------------------------------------------
+
+@router.post("/patient/login/request-otp", response_model=PatientLoginOtpResponse)
+def patient_login_request_otp(
+    data: PatientLoginOtpRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Step 1 — Request mobile OTP for ABHA-based login.
+
+    Resolves the registered mobile number from the patient's stored profile
+    using the supplied abha_id / abha_address.  If a bare mobile number is
+    supplied instead, the OTP is triggered directly via the ABDM SMS gateway.
+
+    Returns a transaction ID and masked mobile for the verify step.
+    """
+    mobile = data.mobile
+
+    if not mobile:
+        patient = _find_patient_by_abha(db, data.abha_id, data.abha_address)
+        if not patient:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="ABHA ID not found or not linked to a patient",
+            )
+        if not patient.phone:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No registered mobile number found for this patient",
+            )
+        mobile = patient.phone
+
+    result = request_mobile_otp(mobile)
+
+    return PatientLoginOtpResponse(
+        txnId=result.get("txnId", ""),
+        masked_mobile=_mask_mobile(mobile),
+        message=result.get("message", "OTP sent successfully to your registered mobile number"),
+    )
+
+
+@router.post("/patient/login/verify-otp", response_model=PatientLoginResponse)
+def patient_login_verify_otp(
+    data: PatientLoginVerifyRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Step 2 — Verify OTP and issue a patient JWT.
+
+    On success the patient record is resolved (or auto-registered from ABDM
+    profile data if the patient has not been seen before), and a signed
+    access token is returned along with the full patient profile.
+    """
+    try:
+        result = verify_mobile_otp(txn_id=data.txn_id, otp=data.otp)
+    except HTTPException as exc:
+        if 400 <= exc.status_code < 500:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=exc.detail or "OTP verification failed or expired",
+            )
+        raise
+
+    if not result.get("verified"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification failed or expired",
+        )
+
+    patient = None
+
+    if data.patient_id:
+        patient = get_patient(db, data.patient_id)
+    elif data.abha_id:
+        patient = _find_patient_by_abha(db, data.abha_id)
+        if not patient:
+            patient = _register_patient_from_abdm(db, data.abha_id, result)
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to resolve patient from the provided credentials",
+        )
+
+    access_token = create_access_token({"sub": str(patient.id), "role": "patient"})
+
+    return PatientLoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        patient=PatientResponse.model_validate(patient),
+    )
 
 
 

@@ -63,7 +63,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [now, setNow] = useState(() => new Date());
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSidebarProfileMenu, setShowSidebarProfileMenu] = useState(false);
+  const [showHeaderProfileMenu, setShowHeaderProfileMenu] = useState(false);
   const [headerToast, setHeaderToast] = useState("");
   const headerToastTimer = useRef<number | null>(null);
   const activeId = pathname === "/admin/alerts" ? "alerts" : pathname === "/admin/queue" ? "queue" : "dashboard";
@@ -96,7 +97,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setMobileOpen(false);
     setShowNotifications(false);
-    setShowProfileMenu(false);
+    setShowSidebarProfileMenu(false);
+    setShowHeaderProfileMenu(false);
   }, [pathname]);
 
   const time = now.toLocaleTimeString("en-IN", {
@@ -117,8 +119,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => {
     clearAdminSession();
     setSession(null);
-    setShowProfileMenu(false);
+    setShowSidebarProfileMenu(false);
+    setShowHeaderProfileMenu(false);
     router.replace("/admin/login");
+  };
+
+  const toggleSidebarProfileMenu = () => {
+    const nextValue = !showSidebarProfileMenu;
+    setShowSidebarProfileMenu(nextValue);
+    setShowHeaderProfileMenu(false);
+    setShowNotifications(false);
+  };
+
+  const toggleHeaderProfileMenu = () => {
+    const nextValue = !showHeaderProfileMenu;
+    setShowHeaderProfileMenu(nextValue);
+    setShowSidebarProfileMenu(false);
+    setShowNotifications(false);
   };
 
   const showHeaderToast = (message: string) => {
@@ -214,13 +231,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setShowProfileMenu((current) => !current);
-                  setShowNotifications(false);
-                }}
+                onClick={toggleSidebarProfileMenu}
                 className="flex w-full items-center gap-3 rounded-xl bg-[#F7F9FB] p-3 text-left hover:bg-[#EFF5F3]"
                 aria-label="Open account menu"
-                aria-expanded={showProfileMenu}
+                aria-expanded={showSidebarProfileMenu}
               >
                 <Avatar name={receptionistName} size="sm" />
                 <div className="min-w-0 flex-1">
@@ -228,7 +242,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <p className="truncate text-[10px] font-medium text-[#8490A2]">Receptionist</p>
                 </div>
               </button>
-              {showProfileMenu && (
+              {showSidebarProfileMenu && (
                 <div className="absolute bottom-[calc(100%+8px)] left-0 z-50 w-44 rounded-xl border border-[#E5EAF0] bg-white p-2 shadow-lg">
                   <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8490A2]">Account</p>
                   <button
@@ -286,7 +300,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   type="button"
                   onClick={() => {
                     setShowNotifications((current) => !current);
-                    setShowProfileMenu(false);
+                    setShowSidebarProfileMenu(false);
+                    setShowHeaderProfileMenu(false);
                   }}
                   className="relative rounded-xl border border-[#E5EAF0] bg-white p-2.5 text-[#69758A] hover:bg-[#F7F9FB]"
                   aria-label="Notifications"
@@ -343,13 +358,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="relative flex items-center gap-2 border-l border-[#E5EAF0] pl-2 sm:pl-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowProfileMenu((current) => !current);
-                    setShowNotifications(false);
-                  }}
+                  onClick={toggleHeaderProfileMenu}
                   className="rounded-lg hover:bg-[#F3F6F8]"
                   aria-label="Open account menu"
-                  aria-expanded={showProfileMenu}
+                  aria-expanded={showHeaderProfileMenu}
                 >
                   <Avatar name={receptionistName} size="sm" />
                 </button>
@@ -357,7 +369,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <p className="max-w-[140px] truncate text-[11px] font-bold text-[#172033]">{receptionistName}</p>
                   <p className="text-[10px] font-medium text-[#8490A2]">Receptionist</p>
                 </div>
-                {showProfileMenu && (
+                {showHeaderProfileMenu && (
                   <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-40 rounded-xl border border-[#E5EAF0] bg-white p-2 shadow-lg">
                     <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8490A2]">Account</p>
                     <button
