@@ -1,0 +1,60 @@
+:root {
+  /* Brand — healthcare teal */
+  --brand: #0e9488;
+  --brand-600: #0b7a70;
+  --brand-700: #0a685f;
+  --brand-800: #09544e;
+  --brand-soft: #e2f4f0;
+  --brand-softer: #eef9f6;
+
+  /* Deep teal-navy for headings / text */
+  --deep: #0b3b4b;
+  --ink: #173b47;
+  --muted: #5b7a85;
+  --faint: #8ba7ae;
+
+  /* Surfaces & lines */
+  --surface: #ffffff;
+  --bg-top: #e9f5f2;
+  --bg-bottom: #f5faf8;
+  --line: #d7e8e4;
+  --line-strong: #bfdcd6;
+
+  /* Accent (amber) */
+  --accent: #f2a33c;
+  --accent-strong: #e08f1f;
+  --accent-soft: #fdf1dd;
+
+  /* Danger */
+  --danger: #d0453f;
+  --danger-strong: #b93630;
+  --danger-soft: #fde9e7;
+
+  /* Success */
+  --success: #1e8a5a;
+  --success-soft: #e6f6ee;
+
+  /* Focus ring (touch + a11y) */
+  --focus: #4aa3df;
+
+  /* Radii */
+  --r-lg: 24px;
+  --r-md: 16px;
+  --r-sm: 12px;
+  --r-xs: 9px;
+
+  /* Shadows */
+  --shadow-card: 0 12px 34px rgba(11, 59, 75, 0.1);
+  --shadow-card-soft: 0 6px 18px rgba(11, 59, 75, 0.07);
+  --shadow-btn: 0 8px 18px rgba(14, 148, 136, 0.3);
+  --shadow-btn-danger: 0 8px 18px rgba(208, 69, 63, 0.3);
+  --shadow-btn-accent: 0 8px 18px rgba(242, 163, 60, 0.32);
+
+  /* Type */
+  --font-head: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --touch-min: 52px;
+  --kiosk-h: 100vh;
+  --kiosk-w: 100vw;
+}

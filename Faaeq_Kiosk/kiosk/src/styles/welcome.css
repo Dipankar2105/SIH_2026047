@@ -1,0 +1,175 @@
+/* ============ Welcome / Kiosk Home ============ */
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.85fr);
+  gap: 26px;
+  align-items: stretch;
+}
+
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.welcome-title {
+  font-size: clamp(34px, 3.6vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  max-width: 760px;
+}
+
+.welcome-title .grad {
+  background: linear-gradient(120deg, var(--brand-700), var(--brand));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.welcome-feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.welcome-start {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.welcome-start .btn-primary {
+  font-size: 21px;
+  min-height: 66px;
+  padding: 18px 36px;
+}
+
+.welcome-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.abha-card {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.abha-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 148, 136, 0.14), transparent 70%);
+}
+
+.abha-scan-btn {
+  min-height: 62px;
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--brand), var(--brand-700));
+  color: #fff;
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: var(--shadow-btn);
+}
+
+.abha-scan-btn:hover {
+  filter: brightness(1.04);
+}
+
+.welcome-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.quick-card {
+  min-height: 92px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.quick-card:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-card-soft);
+}
+
+.quick-card .qc-icon {
+  font-size: 24px;
+}
+
+.quick-card .qc-label {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--deep);
+}
+
+.quick-card .qc-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.emergency-card {
+  padding: 22px 26px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(120deg, #fff7f6, #ffece8);
+  border: 2px solid #f3c9c2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  transition: all 0.12s ease;
+}
+
+.emergency-card:hover {
+  border-color: var(--danger);
+  box-shadow: 0 10px 26px rgba(208, 69, 63, 0.16);
+}
+
+.emergency-card .ec-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mic-note {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14.5px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+}
+
+@media (max-width: 1050px) {
+  .welcome-grid {
+    grid-template-columns: 1fr;
+  }
+}

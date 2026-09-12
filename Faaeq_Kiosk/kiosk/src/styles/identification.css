@@ -1,0 +1,119 @@
+/* ============ Patient Identification ============ */
+
+.id-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(330px, 0.8fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.id-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.id-card {
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.abha-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.abha-counter {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--brand-700);
+  background: var(--brand-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.abha-clear {
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--muted);
+  border: 1.5px solid var(--line-strong);
+  background: #fff;
+}
+
+.abha-clear:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.keypad-wrap {
+  padding: 4px 6px;
+}
+
+.id-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.id-consent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.id-consent h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.consent-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+}
+
+.consent-bullets li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 7px 0;
+}
+
+.consent-bullets li svg {
+  color: var(--brand);
+  flex: 0 0 auto;
+}
+
+.otp-hint {
+  font-size: 13.5px;
+  color: var(--muted);
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+}
+
+.guest-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 1050px) {
+  .id-grid {
+    grid-template-columns: 1fr;
+  }
+}

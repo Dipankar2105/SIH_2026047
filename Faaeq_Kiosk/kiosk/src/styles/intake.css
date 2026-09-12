@@ -1,0 +1,140 @@
+.intake-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+  padding-bottom: 24px;
+}
+
+.intake-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.intake-greeting {
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 800;
+}
+
+.intake-question-card {
+  padding: 26px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intake-q-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.intake-q {
+  font-size: clamp(21px, 2.1vw, 27px);
+  font-weight: 800;
+  line-height: 1.25;
+  max-width: 900px;
+}
+
+.intake-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.intake-location {
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.intake-location h4 {
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.identified-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--r-sm);
+  background: var(--success-soft);
+  border: 1px solid #c5ead6;
+  color: var(--success);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.intake-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.intake-footer-actions .field-box {
+  flex: 1;
+}
+
+.intake-footer-actions .field-box textarea {
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.voice-note {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.scale-key {
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line-strong);
+  background: #fff;
+  font-family: var(--font-head);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--deep);
+}
+
+.scale-key.selected {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: var(--shadow-btn);
+}
+
+.intake-body-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .intake-footer-actions {
+    flex-wrap: wrap;
+  }
+  .location-options {
+    grid-template-columns: 1fr;
+  }
+}
